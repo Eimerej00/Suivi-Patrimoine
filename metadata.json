@@ -1,0 +1,6 @@
+{
+  "name": "Patrimoine & Wealth Tracker PWA",
+  "description": "Application complète de suivi de patrimoine net et brut, investissements PEA, CTO, Bitcoin, Immobilier et PEE avec synchronisation en temps réel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
