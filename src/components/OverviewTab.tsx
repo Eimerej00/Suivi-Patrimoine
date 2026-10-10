@@ -46,7 +46,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ data, onUpdateProjecti
     onUpdateProjection(newYears, newRate, newMonthly);
   };
 
-  const projectionChartData = computeProjectionData(totals.netWorth, monthlyInv, returnRate, years);
+  const projectionChartData = computeProjectionData(totals.financialGross, monthlyInv, returnRate, years);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
@@ -203,7 +203,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ data, onUpdateProjecti
               <h3 className="text-xl font-bold text-white">Simulateur de Projection & Intérêts Composés</h3>
             </div>
             <p className="text-sm text-slate-400 mt-1">
-              Projetez l'évolution de votre patrimoine net sur plusieurs années avec épargne mensuelle et taux de rendement personnalisable.
+              Projetez l'évolution de votre patrimoine financier (hors immobilier) sur plusieurs années avec épargne mensuelle et taux de rendement personnalisable.
             </p>
           </div>
         </div>

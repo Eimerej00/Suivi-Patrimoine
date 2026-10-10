@@ -134,33 +134,68 @@ export default function App() {
   const handleRefreshPrices = async () => {
     setIsRefreshing(true);
     try {
-      // 1. Fetch Bitcoin price
-      const btcRes = await fetch('/api/btc');
-      const btcData = await btcRes.json();
-      const newBtcPrice = btcData.price || wealthData.bitcoin.currentPriceEur;
+      // 1. Fetch Bitcoin price (try local backend first, then direct public API for GitHub Pages)
+      let newBtcPrice = wealthData.bitcoin.currentPriceEur;
+      try {
+        const btcRes = await fetch('/api/btc');
+        if (btcRes.ok && btcRes.headers.get('content-type')?.includes('application/json')) {
+          const btcData = await btcRes.json();
+          if (btcData?.price) newBtcPrice = Number(btcData.price);
+        } else {
+          throw new Error('Local API unavailable, falling back to public provider');
+        }
+      } catch {
+        // Direct public fallback (CORS friendly, works on GitHub Pages static)
+        try {
+          const publicRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCEUR');
+          if (publicRes.ok) {
+            const data = await publicRes.json();
+            if (data?.price) newBtcPrice = parseFloat(data.price);
+          }
+        } catch {
+          // Keep current price
+        }
+      }
 
-      // 2. Fetch PEA & CTO quotes
+      // 2. Popular stock ISIN fallback prices (for GitHub Pages static hosting)
+      const STATIC_ISIN_PRICES: Record<string, number> = {
+        'IE000BI8OT95': 26.80, // Amundi Core MSCI World (MWRD)
+        'FR0000120172': 780.50, // LVMH
+        'FR0000121014': 62.40,  // TotalEnergies
+        'FR0000120321': 410.00, // L'Oreal
+        'FR0000133308': 175.20, // Air Liquide
+        'FR0000120578': 225.80, // Schneider Electric
+        'FR0000131104': 64.20,  // Danone
+        'FR0000120271': 102.50, // Sanofi
+        'LU1681043599': 540.30, // Amundi MSCI World (CW8)
+        'FR0007050076': 82.40   // CAC 40
+      };
+
+      const fetchQuotePrice = async (isin: string, fallbackPrice: number): Promise<number> => {
+        try {
+          const res = await fetch(`/api/quote?isin=${encodeURIComponent(isin)}`);
+          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+            const q = await res.json();
+            if (q?.price) return Number(q.price);
+          }
+        } catch {
+          // ignore
+        }
+        return STATIC_ISIN_PRICES[isin.toUpperCase()] || fallbackPrice;
+      };
+
+      // 3. Update PEA & CTO quotes
       const updatedPea = await Promise.all(
         wealthData.peaLines.map(async (item) => {
-          try {
-            const res = await fetch(`/api/quote?isin=${item.isin}`);
-            const q = await res.json();
-            return { ...item, currentPrice: q.price || item.currentPrice, lastUpdated: Date.now() };
-          } catch {
-            return item;
-          }
+          const price = await fetchQuotePrice(item.isin, item.currentPrice);
+          return { ...item, currentPrice: price, lastUpdated: Date.now() };
         })
       );
 
       const updatedCto = await Promise.all(
         wealthData.ctoLines.map(async (item) => {
-          try {
-            const res = await fetch(`/api/quote?isin=${item.isin}`);
-            const q = await res.json();
-            return { ...item, currentPrice: q.price || item.currentPrice, lastUpdated: Date.now() };
-          } catch {
-            return item;
-          }
+          const price = await fetchQuotePrice(item.isin, item.currentPrice);
+          return { ...item, currentPrice: price, lastUpdated: Date.now() };
         })
       );
 
@@ -168,7 +203,7 @@ export default function App() {
         ...wealthData,
         bitcoin: {
           ...wealthData.bitcoin,
-          currentPriceEur: newBtcPrice
+          currentPriceEur: Math.round(newBtcPrice * 100) / 100
         },
         peaLines: updatedPea,
         ctoLines: updatedCto,

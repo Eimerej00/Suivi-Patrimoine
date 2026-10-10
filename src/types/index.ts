@@ -49,7 +49,7 @@ export interface WealthData {
 
 export const DEFAULT_WEALTH_DATA: WealthData = {
   peaLines: [
-    { id: 'pea-1', isin: 'LU1681043599', name: 'Amundi MSCI World UCITS ETF', quantity: 45, purchasePrice: 480.0, currentPrice: 540.3 },
+    { id: 'pea-1', isin: 'IE000BI8OT95', name: 'Amundi Core MSCI World UCITS ETF', quantity: 800, purchasePrice: 24.50, currentPrice: 26.80 },
     { id: 'pea-2', isin: 'FR0000120172', name: 'LVMH Moët Hennessy', quantity: 6, purchasePrice: 750.0, currentPrice: 780.5 }
   ],
   ctoLines: [
