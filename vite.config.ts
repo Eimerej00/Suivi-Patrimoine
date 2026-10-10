@@ -1,12 +1,39 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Read local config safely if file exists on disk (will not fail if file is missing in Git)
+let localConfig: any = {};
+const configPath = path.resolve(__dirname, 'firebase-applet-config.json');
+if (fs.existsSync(configPath)) {
+  try {
+    localConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  } catch {
+    localConfig = {};
+  }
+}
 
 export default defineConfig(() => {
   return {
     base: './',
     plugins: [react(), tailwindcss()],
+    define: {
+      '__FIREBASE_DEFAULTS__': JSON.stringify({
+        apiKey: localConfig.apiKey || '',
+        authDomain: localConfig.authDomain || 'temporal-charge-thl8x.firebaseapp.com',
+        projectId: localConfig.projectId || 'temporal-charge-thl8x',
+        storageBucket: localConfig.storageBucket || 'temporal-charge-thl8x.firebasestorage.app',
+        messagingSenderId: localConfig.messagingSenderId || '660117405427',
+        appId: localConfig.appId || '1:660117405427:web:069094c7c60e7fdebe8186',
+        databaseId: localConfig.firestoreDatabaseId || 'ai-studio-3bcb2e47-829c-4de3-9232-9495856b0309'
+      })
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -44,7 +44,10 @@ jobs:
           VITE_FIREBASE_FIRESTORE_DATABASE_ID: ${{ secrets.VITE_FIREBASE_FIRESTORE_DATABASE_ID }}
 
       - name: Ensure 404.html exists for GitHub Pages SPA routing
-        run: cp dist/index.html dist/404.html
+        run: |
+          if [ ! -f dist/404.html ]; then
+            cp dist/index.html dist/404.html
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
