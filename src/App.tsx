@@ -31,6 +31,17 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  // Load cached data from localStorage immediately on mount
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('patrimoine_wealth_data');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.peaLines) setWealthData(parsed);
+      }
+    } catch {}
+  }, []);
+
   // Online / Offline listener
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -45,27 +56,44 @@ export default function App() {
 
   // Auth state observer & Whitelist enforcement
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const email = currentUser.email?.toLowerCase();
-        if (email === ALLOWED_EMAIL.toLowerCase()) {
-          setUser(currentUser);
-          setUnauthorizedEmail(null);
-          // Load data from Firestore
-          await loadFirestoreData(currentUser.uid);
-        } else {
-          // Unauthorized email
-          await signOut(auth);
-          setUnauthorizedEmail(currentUser.email);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+    if (!auth) {
       setAuthLoading(false);
-    });
+      return;
+    }
 
-    return () => unsubscribe();
+    try {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        async (currentUser) => {
+          if (currentUser) {
+            const email = currentUser.email?.toLowerCase();
+            if (email === ALLOWED_EMAIL.toLowerCase()) {
+              setUser(currentUser);
+              setUnauthorizedEmail(null);
+              // Load data from Firestore
+              await loadFirestoreData(currentUser.uid);
+            } else {
+              // Unauthorized email
+              await signOut(auth);
+              setUnauthorizedEmail(currentUser.email);
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+          setAuthLoading(false);
+        },
+        (error) => {
+          console.warn('Auth state error:', error);
+          setAuthLoading(false);
+        }
+      );
+
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('Error setting up auth observer:', e);
+      setAuthLoading(false);
+    }
   }, []);
 
   // Load Firestore data
@@ -100,7 +128,10 @@ export default function App() {
   // Save wealth data to Firestore & local state
   const handleDataChange = async (newData: WealthData) => {
     setWealthData(newData);
-    if (user) {
+    try {
+      localStorage.setItem('patrimoine_wealth_data', JSON.stringify(newData));
+    } catch {}
+    if (user && db) {
       try {
         const docRef = doc(db, 'users', user.uid, 'wealthData', 'portfolio');
         await setDoc(docRef, { ...newData, lastModified: Date.now() });
