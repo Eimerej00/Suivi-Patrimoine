@@ -10,8 +10,12 @@ import {
   Briefcase,
   ShieldCheck,
   Search,
-  ExternalLink
+  ExternalLink,
+  Pencil,
+  History
 } from 'lucide-react';
+import { StockHistoryModal } from './StockHistoryModal';
+import { EditStockModal, EditSimpleAssetModal, EditRealEstateModal } from './EditModals';
 
 interface PortfolioTabProps {
   data: WealthData;
@@ -21,7 +25,8 @@ interface PortfolioTabProps {
 }
 
 const POPULAR_PRESETS = [
-  { isin: 'LU1681043599', name: 'Amundi MSCI World UCITS ETF' },
+  { isin: 'IE000BI8OT95', name: 'Amundi Core MSCI World UCITS ETF' },
+  { isin: 'LU1681043599', name: 'Amundi MSCI World (CW8)' },
   { isin: 'FR0000120172', name: 'LVMH Moët Hennessy' },
   { isin: 'FR0000121014', name: 'TotalEnergies' },
   { isin: 'FR0000120321', name: "L'Oréal" },
@@ -38,7 +43,17 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'pea_cto' | 'crypto' | 'epargne' | 'immobilier'>('pea_cto');
 
-  // Stock modal / form state
+  // Modal states
+  const [activeHistoryStock, setActiveHistoryStock] = useState<{ type: 'pea' | 'cto'; stock: StockLine } | null>(null);
+  const [editingStock, setEditingStock] = useState<{ type: 'pea' | 'cto'; stock: StockLine } | null>(null);
+  const [editingSimpleAsset, setEditingSimpleAsset] = useState<{
+    category: 'pee' | 'livret' | 'assuranceVie';
+    asset: SimpleAssetLine;
+    label: string;
+  } | null>(null);
+  const [editingRealEstate, setEditingRealEstate] = useState<RealEstateLine | null>(null);
+
+  // New stock form state
   const [stockType, setStockType] = useState<'pea' | 'cto'>('pea');
   const [newIsin, setNewIsin] = useState('');
   const [newName, setNewName] = useState('');
@@ -75,7 +90,16 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       name: newName || newIsin,
       quantity: Number(newQty) || 0,
       purchasePrice: Number(newPurchasePrice) || 0,
-      currentPrice: Number(newPurchasePrice) || 0
+      currentPrice: Number(newPurchasePrice) || 0,
+      transactions: [
+        {
+          id: `tx-${Date.now()}`,
+          date: new Date().toISOString().slice(0, 10),
+          quantity: Number(newQty) || 0,
+          price: Number(newPurchasePrice) || 0,
+          note: 'Achat initial'
+        }
+      ]
     };
 
     const updated = { ...data };
@@ -89,7 +113,22 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
     setNewName('');
   };
 
+  const handleSaveStock = (type: 'pea' | 'cto', updatedStock: StockLine) => {
+    const updated = { ...data };
+    if (type === 'pea') {
+      updated.peaLines = updated.peaLines.map(s => s.id === updatedStock.id ? updatedStock : s);
+    } else {
+      updated.ctoLines = updated.ctoLines.map(s => s.id === updatedStock.id ? updatedStock : s);
+    }
+    onDataChange(updated);
+    // Also sync activeHistoryStock if currently open
+    if (activeHistoryStock && activeHistoryStock.stock.id === updatedStock.id) {
+      setActiveHistoryStock({ type, stock: updatedStock });
+    }
+  };
+
   const handleRemoveStock = (type: 'pea' | 'cto', id: string) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette ligne du portefeuille ?')) return;
     const updated = { ...data };
     if (type === 'pea') {
       updated.peaLines = updated.peaLines.filter(i => i.id !== id);
@@ -138,7 +177,20 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
     setNewAssetName('');
   };
 
+  const handleSaveSimpleAsset = (category: 'pee' | 'livret' | 'assuranceVie', updatedAsset: SimpleAssetLine) => {
+    const updated = { ...data };
+    if (category === 'pee') {
+      updated.peeLines = updated.peeLines.map(a => a.id === updatedAsset.id ? updatedAsset : a);
+    } else if (category === 'livret') {
+      updated.livretLines = updated.livretLines.map(a => a.id === updatedAsset.id ? updatedAsset : a);
+    } else {
+      updated.assuranceVieLines = updated.assuranceVieLines.map(a => a.id === updatedAsset.id ? updatedAsset : a);
+    }
+    onDataChange(updated);
+  };
+
   const handleRemoveAsset = (category: 'pee' | 'livret' | 'assuranceVie', id: string) => {
+    if (!window.confirm('Voulez-vous supprimer ce compte / livret ?')) return;
     const updated = { ...data };
     if (category === 'pee') updated.peeLines = updated.peeLines.filter(i => i.id !== id);
     else if (category === 'livret') updated.livretLines = updated.livretLines.filter(i => i.id !== id);
@@ -165,7 +217,16 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
     setNewImmoName('');
   };
 
+  const handleSaveRealEstate = (updatedImmo: RealEstateLine) => {
+    const updated = {
+      ...data,
+      realEstateLines: data.realEstateLines.map(r => r.id === updatedImmo.id ? updatedImmo : r)
+    };
+    onDataChange(updated);
+  };
+
   const handleRemoveImmo = (id: string) => {
+    if (!window.confirm('Voulez-vous supprimer ce bien immobilier ?')) return;
     const updated = {
       ...data,
       realEstateLines: data.realEstateLines.filter(i => i.id !== id)
@@ -256,7 +317,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                 <label className="block text-xs font-medium text-slate-400 mb-1">Code ISIN</label>
                 <input
                   type="text"
-                  placeholder="ex: LU1681043599"
+                  placeholder="ex: IE000BI8OT95"
                   value={newIsin}
                   onChange={(e) => setNewIsin(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
@@ -283,7 +344,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   step="any"
                   value={newQty}
                   onChange={(e) => setNewQty(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
                   required
                 />
               </div>
@@ -295,7 +356,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   step="any"
                   value={newPurchasePrice}
                   onChange={(e) => setNewPurchasePrice(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
                   required
                 />
               </div>
@@ -333,10 +394,11 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
                     <th className="pb-3 font-semibold">Titre / ISIN</th>
                     <th className="pb-3 font-semibold text-right">Qté</th>
+                    <th className="pb-3 font-semibold text-right">PRU (€)</th>
                     <th className="pb-3 font-semibold text-right">Cours actuel</th>
                     <th className="pb-3 font-semibold text-right">Valeur totale</th>
                     <th className="pb-3 font-semibold text-right">Plus-value</th>
-                    <th className="pb-3 font-semibold text-right">Action</th>
+                    <th className="pb-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
@@ -345,32 +407,65 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     const investedVal = item.quantity * item.purchasePrice;
                     const gain = totalVal - investedVal;
                     const gainPct = investedVal > 0 ? (gain / investedVal) * 100 : 0;
+                    const txCount = item.transactions?.length || 0;
+
                     return (
                       <tr key={item.id} className="hover:bg-slate-800/30 transition">
                         <td className="py-4">
                           <div className="font-bold text-white">{item.name}</div>
-                          <div className="text-xs font-mono text-blue-400">{item.isin}</div>
+                          <div className="text-xs font-mono text-blue-400 flex items-center gap-2">
+                            <span>{item.isin}</span>
+                            {txCount > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                                {txCount} {txCount === 1 ? 'achat' : 'achats'}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="py-4 text-right font-medium text-slate-200">{item.quantity}</td>
+                        <td className="py-4 text-right font-medium text-slate-200 font-mono">{item.quantity}</td>
+                        <td className="py-4 text-right font-mono text-slate-300">{formatCurrency(item.purchasePrice)}</td>
                         <td className="py-4 text-right font-mono text-slate-200">{formatCurrency(item.currentPrice)}</td>
-                        <td className="py-4 text-right font-bold text-white">{formatCurrency(totalVal)}</td>
-                        <td className={`py-4 text-right font-semibold ${gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(totalVal)}</td>
+                        <td className={`py-4 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({gainPct.toFixed(1)}%)
                         </td>
                         <td className="py-4 text-right">
-                          <button
-                            onClick={() => handleRemoveStock('pea', item.id)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* DCA / Add Investment & History Button */}
+                            <button
+                              onClick={() => setActiveHistoryStock({ type: 'pea', stock: item })}
+                              title="Ajouter un achat (DCA) & Voir l'historique"
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1 text-xs"
+                            >
+                              <History className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline font-medium">Investir</span>
+                            </button>
+
+                            {/* Edit Button */}
+                            <button
+                              onClick={() => setEditingStock({ type: 'pea', stock: item })}
+                              title="Modifier cette ligne"
+                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => handleRemoveStock('pea', item.id)}
+                              title="Supprimer cette ligne"
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
                   })}
                   {data.peaLines.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500 text-sm">
+                      <td colSpan={7} className="py-8 text-center text-slate-500 text-sm">
                         Aucune ligne dans le PEA. Ajoutez votre premier titre ci-dessus.
                       </td>
                     </tr>
@@ -392,10 +487,11 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
                     <th className="pb-3 font-semibold">Titre / ISIN</th>
                     <th className="pb-3 font-semibold text-right">Qté</th>
+                    <th className="pb-3 font-semibold text-right">PRU (€)</th>
                     <th className="pb-3 font-semibold text-right">Cours actuel</th>
                     <th className="pb-3 font-semibold text-right">Valeur totale</th>
                     <th className="pb-3 font-semibold text-right">Plus-value</th>
-                    <th className="pb-3 font-semibold text-right">Action</th>
+                    <th className="pb-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
@@ -404,32 +500,65 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     const investedVal = item.quantity * item.purchasePrice;
                     const gain = totalVal - investedVal;
                     const gainPct = investedVal > 0 ? (gain / investedVal) * 100 : 0;
+                    const txCount = item.transactions?.length || 0;
+
                     return (
                       <tr key={item.id} className="hover:bg-slate-800/30 transition">
                         <td className="py-4">
                           <div className="font-bold text-white">{item.name}</div>
-                          <div className="text-xs font-mono text-indigo-400">{item.isin}</div>
+                          <div className="text-xs font-mono text-indigo-400 flex items-center gap-2">
+                            <span>{item.isin}</span>
+                            {txCount > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                                {txCount} {txCount === 1 ? 'achat' : 'achats'}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="py-4 text-right font-medium text-slate-200">{item.quantity}</td>
+                        <td className="py-4 text-right font-medium text-slate-200 font-mono">{item.quantity}</td>
+                        <td className="py-4 text-right font-mono text-slate-300">{formatCurrency(item.purchasePrice)}</td>
                         <td className="py-4 text-right font-mono text-slate-200">{formatCurrency(item.currentPrice)}</td>
-                        <td className="py-4 text-right font-bold text-white">{formatCurrency(totalVal)}</td>
-                        <td className={`py-4 text-right font-semibold ${gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(totalVal)}</td>
+                        <td className={`py-4 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({gainPct.toFixed(1)}%)
                         </td>
                         <td className="py-4 text-right">
-                          <button
-                            onClick={() => handleRemoveStock('cto', item.id)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* DCA / Add Investment & History Button */}
+                            <button
+                              onClick={() => setActiveHistoryStock({ type: 'cto', stock: item })}
+                              title="Ajouter un achat (DCA) & Voir l'historique"
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1 text-xs"
+                            >
+                              <History className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline font-medium">Investir</span>
+                            </button>
+
+                            {/* Edit Button */}
+                            <button
+                              onClick={() => setEditingStock({ type: 'cto', stock: item })}
+                              title="Modifier cette ligne"
+                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => handleRemoveStock('cto', item.id)}
+                              title="Supprimer cette ligne"
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
                   })}
                   {data.ctoLines.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500 text-sm">
+                      <td colSpan={7} className="py-8 text-center text-slate-500 text-sm">
                         Aucune ligne dans le CTO.
                       </td>
                     </tr>
@@ -452,7 +581,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white">Position Bitcoin (BTC/EUR)</h3>
-                  <p className="text-xs text-slate-400">Cours en temps réel synchronisé (Paymium / CoinGecko)</p>
+                  <p className="text-xs text-slate-400">Cours en temps réel synchronisé (Paymium / CoinGecko / Binance)</p>
                 </div>
               </div>
               <button
@@ -557,7 +686,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   step="any"
                   value={newAssetValue}
                   onChange={(e) => setNewAssetValue(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
                   required
                 />
               </div>
@@ -569,7 +698,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   step="0.1"
                   value={newAssetRate}
                   onChange={(e) => setNewAssetRate(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
                   required
                 />
               </div>
@@ -595,25 +724,42 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     <th className="pb-3 font-semibold">Nom</th>
                     <th className="pb-3 font-semibold text-right">Rendement net</th>
                     <th className="pb-3 font-semibold text-right">Valeur actuelle</th>
-                    <th className="pb-3 font-semibold text-right">Action</th>
+                    <th className="pb-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {data.livretLines.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-800/30 transition">
                       <td className="py-4 font-bold text-white">{item.name}</td>
-                      <td className="py-4 text-right text-emerald-400 font-semibold">{item.annualReturnRate}% / an</td>
-                      <td className="py-4 text-right font-bold text-white">{formatCurrency(item.value)}</td>
+                      <td className="py-4 text-right text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
+                      <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(item.value)}</td>
                       <td className="py-4 text-right">
-                        <button
-                          onClick={() => handleRemoveAsset('livret', item.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setEditingSimpleAsset({ category: 'livret', asset: item, label: 'Livret / Épargne' })}
+                            title="Modifier ce livret"
+                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveAsset('livret', item.id)}
+                            title="Supprimer"
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {data.livretLines.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-slate-500 text-xs">
+                        Aucun livret enregistré.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -629,25 +775,42 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     <th className="pb-3 font-semibold">Nom</th>
                     <th className="pb-3 font-semibold text-right">Rendement net</th>
                     <th className="pb-3 font-semibold text-right">Valeur actuelle</th>
-                    <th className="pb-3 font-semibold text-right">Action</th>
+                    <th className="pb-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {data.assuranceVieLines.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-800/30 transition">
                       <td className="py-4 font-bold text-white">{item.name}</td>
-                      <td className="py-4 text-right text-emerald-400 font-semibold">{item.annualReturnRate}% / an</td>
-                      <td className="py-4 text-right font-bold text-white">{formatCurrency(item.value)}</td>
+                      <td className="py-4 text-right text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
+                      <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(item.value)}</td>
                       <td className="py-4 text-right">
-                        <button
-                          onClick={() => handleRemoveAsset('assuranceVie', item.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setEditingSimpleAsset({ category: 'assuranceVie', asset: item, label: 'Assurance Vie' })}
+                            title="Modifier cette assurance vie"
+                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveAsset('assuranceVie', item.id)}
+                            title="Supprimer"
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {data.assuranceVieLines.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-slate-500 text-xs">
+                        Aucune assurance vie enregistrée.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -663,25 +826,42 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     <th className="pb-3 font-semibold">Nom</th>
                     <th className="pb-3 font-semibold text-right">Rendement net</th>
                     <th className="pb-3 font-semibold text-right">Valeur actuelle</th>
-                    <th className="pb-3 font-semibold text-right">Action</th>
+                    <th className="pb-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {data.peeLines.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-800/30 transition">
                       <td className="py-4 font-bold text-white">{item.name}</td>
-                      <td className="py-4 text-right text-emerald-400 font-semibold">{item.annualReturnRate}% / an</td>
-                      <td className="py-4 text-right font-bold text-white">{formatCurrency(item.value)}</td>
+                      <td className="py-4 text-right text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
+                      <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(item.value)}</td>
                       <td className="py-4 text-right">
-                        <button
-                          onClick={() => handleRemoveAsset('pee', item.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setEditingSimpleAsset({ category: 'pee', asset: item, label: 'PEE (Épargne Entreprise)' })}
+                            title="Modifier ce PEE"
+                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveAsset('pee', item.id)}
+                            title="Supprimer"
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {data.peeLines.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-slate-500 text-xs">
+                        Aucun PEE enregistré.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -715,7 +895,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   step="any"
                   value={newImmoVal}
                   onChange={(e) => setNewImmoVal(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono"
                   required
                 />
               </div>
@@ -727,7 +907,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   step="any"
                   value={newImmoDebt}
                   onChange={(e) => setNewImmoDebt(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono"
                   required
                 />
               </div>
@@ -739,7 +919,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   step="0.1"
                   value={newImmoRate}
                   onChange={(e) => setNewImmoRate(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono"
                   required
                 />
               </div>
@@ -766,7 +946,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     <th className="pb-3 font-semibold text-right">Valeur estimée</th>
                     <th className="pb-3 font-semibold text-right">Capital restant dû</th>
                     <th className="pb-3 font-semibold text-right">Valeur nette</th>
-                    <th className="pb-3 font-semibold text-right">Action</th>
+                    <th className="pb-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
@@ -777,14 +957,24 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                         <td className="py-4 font-bold text-white">{item.name}</td>
                         <td className="py-4 text-right font-mono text-slate-200">{formatCurrency(item.estimatedValue)}</td>
                         <td className="py-4 text-right font-mono text-rose-400">-{formatCurrency(item.remainingDebt)}</td>
-                        <td className="py-4 text-right font-bold text-cyan-400">{formatCurrency(netVal)}</td>
+                        <td className="py-4 text-right font-bold text-cyan-400 font-mono">{formatCurrency(netVal)}</td>
                         <td className="py-4 text-right">
-                          <button
-                            onClick={() => handleRemoveImmo(item.id)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setEditingRealEstate(item)}
+                              title="Modifier ce bien immobilier"
+                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleRemoveImmo(item.id)}
+                              title="Supprimer"
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -801,6 +991,45 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL 1: Stock DCA / Investment History Modal */}
+      {activeHistoryStock && (
+        <StockHistoryModal
+          stock={activeHistoryStock.stock}
+          accountType={activeHistoryStock.type}
+          onClose={() => setActiveHistoryStock(null)}
+          onSave={(updatedStock) => handleSaveStock(activeHistoryStock.type, updatedStock)}
+        />
+      )}
+
+      {/* MODAL 2: Edit Stock Modal */}
+      {editingStock && (
+        <EditStockModal
+          stock={editingStock.stock}
+          accountType={editingStock.type}
+          onClose={() => setEditingStock(null)}
+          onSave={(updatedStock) => handleSaveStock(editingStock.type, updatedStock)}
+        />
+      )}
+
+      {/* MODAL 3: Edit Simple Asset Modal */}
+      {editingSimpleAsset && (
+        <EditSimpleAssetModal
+          asset={editingSimpleAsset.asset}
+          categoryLabel={editingSimpleAsset.label}
+          onClose={() => setEditingSimpleAsset(null)}
+          onSave={(updatedAsset) => handleSaveSimpleAsset(editingSimpleAsset.category, updatedAsset)}
+        />
+      )}
+
+      {/* MODAL 4: Edit Real Estate Modal */}
+      {editingRealEstate && (
+        <EditRealEstateModal
+          realEstate={editingRealEstate}
+          onClose={() => setEditingRealEstate(null)}
+          onSave={(updatedImmo) => handleSaveRealEstate(updatedImmo)}
+        />
       )}
     </div>
   );

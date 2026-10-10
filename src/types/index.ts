@@ -1,3 +1,12 @@
+export interface StockTransaction {
+  id: string;
+  date: string; // YYYY-MM-DD
+  quantity: number;
+  price: number; // Prix d'achat unitaire
+  fees?: number;
+  note?: string;
+}
+
 export interface StockLine {
   id: string;
   isin: string;
@@ -6,6 +15,7 @@ export interface StockLine {
   purchasePrice: number;
   currentPrice: number;
   lastUpdated?: number;
+  transactions?: StockTransaction[];
 }
 
 export interface BitcoinHolding {
@@ -49,11 +59,42 @@ export interface WealthData {
 
 export const DEFAULT_WEALTH_DATA: WealthData = {
   peaLines: [
-    { id: 'pea-1', isin: 'IE000BI8OT95', name: 'Amundi Core MSCI World UCITS ETF', quantity: 800, purchasePrice: 24.50, currentPrice: 26.80 },
-    { id: 'pea-2', isin: 'FR0000120172', name: 'LVMH Moët Hennessy', quantity: 6, purchasePrice: 750.0, currentPrice: 780.5 }
+    {
+      id: 'pea-1',
+      isin: 'IE000BI8OT95',
+      name: 'Amundi Core MSCI World UCITS ETF',
+      quantity: 800,
+      purchasePrice: 24.50,
+      currentPrice: 26.80,
+      transactions: [
+        { id: 'tx-1', date: '2026-01-15', quantity: 400, price: 24.00, note: 'Achat initial' },
+        { id: 'tx-2', date: '2026-06-01', quantity: 400, price: 25.00, note: 'Renforcement DCA' }
+      ]
+    },
+    {
+      id: 'pea-2',
+      isin: 'FR0000120172',
+      name: 'LVMH Moët Hennessy',
+      quantity: 6,
+      purchasePrice: 750.0,
+      currentPrice: 780.5,
+      transactions: [
+        { id: 'tx-3', date: '2026-02-10', quantity: 6, price: 750.0, note: 'Achat initial' }
+      ]
+    }
   ],
   ctoLines: [
-    { id: 'cto-1', isin: 'FR0000121014', name: 'TotalEnergies', quantity: 50, purchasePrice: 58.0, currentPrice: 62.4 }
+    {
+      id: 'cto-1',
+      isin: 'FR0000121014',
+      name: 'TotalEnergies',
+      quantity: 50,
+      purchasePrice: 58.0,
+      currentPrice: 62.4,
+      transactions: [
+        { id: 'tx-4', date: '2026-03-05', quantity: 50, price: 58.0, note: 'Achat CTO' }
+      ]
+    }
   ],
   bitcoin: {
     amount: 0.85,
