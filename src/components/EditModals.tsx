@@ -34,7 +34,7 @@ export const EditStockModal: React.FC<EditStockModalProps> = ({
     setIsFetchingPrice(true);
     try {
       const res = await fetch(`/api/quote?isin=${encodeURIComponent(isin.trim().toUpperCase())}`);
-      if (res.ok) {
+      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
         const d = await res.json();
         if (typeof d?.price === 'number' && d.price > 0) {
           setCurrentPrice(d.price);

@@ -145,8 +145,12 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
     } else if (cleanIsin.length >= 12) {
       // If 12 characters and not in catalog, attempt server API lookup
       fetch(`/api/quote?isin=${encodeURIComponent(cleanIsin)}`)
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok || !r.headers.get('content-type')?.includes('application/json')) return null;
+          return r.json();
+        })
         .then(res => {
+          if (!res) return;
           if (res?.name && res.name !== cleanIsin && res.name !== 'Titre') {
             setNewName(res.name);
           }

@@ -5,8 +5,19 @@ import App from './App.tsx';
 import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 
-// Automatically register PWA service worker for offline support and installability
-registerSW({ immediate: true });
+// Safely register PWA service worker with error handling (avoids iframe/security errors in AI Studio preview)
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  try {
+    registerSW({
+      immediate: true,
+      onRegisterError(error) {
+        console.warn('PWA service worker registration skipped in preview iframe:', error);
+      }
+    });
+  } catch (err) {
+    console.warn('PWA registration safely handled:', err);
+  }
+}
 
 interface Props {
   children: ReactNode;

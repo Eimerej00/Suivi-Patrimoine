@@ -1,10 +1,10 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "Patrimoine & Wealth Tracker",
   "short_name": "Patrimoine",
   "description": "Application de suivi et gestion de patrimoine net et brut, PEA, CTO, Bitcoin, Immobilier et PEE.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0f172a",
@@ -12,19 +12,19 @@
   "categories": ["finance", "productivity"],
   "icons": [
     {
-      "src": "/pwa-192x192.png",
+      "src": "pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/pwa-maskable-512x512.png",
+      "src": "pwa-maskable-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

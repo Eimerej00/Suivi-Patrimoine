@@ -20,9 +20,17 @@ if (fs.existsSync(configPath)) {
   }
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
+  // Determine base path:
+  // - In local dev server ('serve'): '/'
+  // - In GitHub Actions / Pages or production build: '/Suivi-Patrimoine/' or process.env.BASE_PATH or './'
+  const isDev = command === 'serve';
+  const isGitHub = Boolean(process.env.GITHUB_ACTIONS || process.env.GITHUB_REPOSITORY);
+  const repoName = process.env.GITHUB_REPOSITORY ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/` : '/Suivi-Patrimoine/';
+  const base = isDev ? '/' : (process.env.BASE_PATH || (isGitHub ? repoName : './'));
+
   return {
-    base: '/',
+    base,
     plugins: [
       react(),
       tailwindcss(),
@@ -30,7 +38,7 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
         manifest: {
-          id: '/',
+          id: './',
           name: 'Patrimoine & Wealth Tracker',
           short_name: 'Patrimoine',
           description: 'Application de suivi et gestion de patrimoine net et brut, PEA, CTO, Bitcoin, Immobilier et PEE.',
@@ -38,23 +46,23 @@ export default defineConfig(() => {
           background_color: '#0f172a',
           display: 'standalone',
           orientation: 'portrait-primary',
-          start_url: '/',
-          scope: '/',
+          start_url: './',
+          scope: './',
           icons: [
             {
-              src: '/pwa-192x192.png',
+              src: 'pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/pwa-512x512.png',
+              src: 'pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/pwa-maskable-512x512.png',
+              src: 'pwa-maskable-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable'
@@ -95,8 +103,7 @@ export default defineConfig(() => {
           ],
         },
         devOptions: {
-          enabled: true,
-          type: 'module',
+          enabled: false, // Prevents iframe service worker conflicts in AI Studio preview
         },
       }),
     ],

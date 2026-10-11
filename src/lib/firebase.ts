@@ -15,7 +15,7 @@ declare const __FIREBASE_DEFAULTS__: {
 const defaults = typeof __FIREBASE_DEFAULTS__ !== 'undefined' ? __FIREBASE_DEFAULTS__ : {};
 
 // Fallback key encoded so the app works seamlessly even if GitHub Secrets were not configured
-const defaultKey = typeof window !== 'undefined' ? atob('QUl6YVN5QklzT1o5MU5UbHlRcUEyZGxJRV9DM3dMZkd6MzRpdlFv') : '';
+const defaultKey = typeof atob === 'function' ? atob('QUl6YVN5QklzT1o5MU5UbHlRcUEyZGxJRV9DM3dMZkd6MzRpdlFv') : '';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || defaults.apiKey || defaultKey,
