@@ -25,16 +25,48 @@ interface PortfolioTabProps {
   isRefreshing: boolean;
 }
 
-const POPULAR_PRESETS = [
-  { isin: 'IE000BI8OT95', name: 'Amundi Core MSCI World UCITS ETF' },
-  { isin: 'LU1681043599', name: 'Amundi MSCI World (CW8)' },
-  { isin: 'FR0000120172', name: 'LVMH Moët Hennessy' },
-  { isin: 'FR0000121014', name: 'TotalEnergies' },
-  { isin: 'FR0000120321', name: "L'Oréal" },
-  { isin: 'FR0000133308', name: 'Air Liquide' },
-  { isin: 'FR0000120578', name: 'Schneider Electric' },
-  { isin: 'FR0007050076', name: 'Amundi ETF CAC 40' }
-];
+const STOCK_CATALOG_BY_ISIN: Record<string, { name: string; defaultPrice: number; type: 'pea' | 'cto' }> = {
+  // ETFs PEA
+  'FR001400U5Q4': { name: 'Amundi PEA Monde (MSCI World) UCITS ETF (DCAM)', defaultPrice: 6.396, type: 'pea' },
+  'IE000BI8OT95': { name: 'Amundi Core MSCI World UCITS ETF (MWRD)', defaultPrice: 165.46, type: 'pea' },
+  'LU1681043599': { name: 'Amundi MSCI World Swap UCITS ETF (CW8)', defaultPrice: 715.80, type: 'pea' },
+  'FR0010315775': { name: 'BNP Paribas Easy S&P 500 UCITS ETF (ESE)', defaultPrice: 35.31, type: 'pea' },
+  'FR0011869353': { name: 'BNP Paribas Easy S&P 500 UCITS ETF (ESE)', defaultPrice: 35.31, type: 'pea' },
+  'FR0007050076': { name: 'Amundi ETF CAC 40 UCITS ETF Dist', defaultPrice: 78.96, type: 'pea' },
+  'FR0013412020': { name: 'Amundi PEA MSCI USA UCITS ETF (PEA)', defaultPrice: 48.20, type: 'pea' },
+  'FR0013412285': { name: 'Amundi PEA MSCI Emerging Markets (PAEEM)', defaultPrice: 22.40, type: 'pea' },
+  'FR0013412269': { name: 'Amundi PEA Nasdaq-100 UCITS ETF (PUST)', defaultPrice: 62.50, type: 'pea' },
+  'FR0011871128': { name: 'BNP Paribas Easy PEA Stoxx Europe 600', defaultPrice: 18.20, type: 'pea' },
+
+  // Actions Françaises PEA / CTO
+  'FR0000120172': { name: 'LVMH Moët Hennessy', defaultPrice: 380.00, type: 'pea' },
+  'FR0000121014': { name: 'TotalEnergies', defaultPrice: 78.53, type: 'pea' },
+  'FR0000120321': { name: "L'Oréal", defaultPrice: 381.20, type: 'pea' },
+  'FR0000133308': { name: 'Air Liquide', defaultPrice: 169.68, type: 'pea' },
+  'FR0000120578': { name: 'Schneider Electric', defaultPrice: 266.40, type: 'pea' },
+  'FR0000131104': { name: 'Danone', defaultPrice: 58.70, type: 'pea' },
+  'FR0000120271': { name: 'Sanofi', defaultPrice: 71.52, type: 'pea' },
+  'FR0000120628': { name: 'AXA', defaultPrice: 41.52, type: 'pea' },
+  'FR0000125007': { name: 'Saint-Gobain', defaultPrice: 64.94, type: 'pea' },
+  'FR0000131906': { name: 'Renault', defaultPrice: 26.50, type: 'pea' },
+  'FR0000120644': { name: 'BNP Paribas', defaultPrice: 68.40, type: 'pea' },
+  'FR0000121972': { name: 'Hermès International', defaultPrice: 1980.00, type: 'pea' },
+  'FR0000120537': { name: 'Capgemini', defaultPrice: 165.20, type: 'pea' },
+  'FR0000120073': { name: 'Airbus', defaultPrice: 142.30, type: 'pea' },
+  'FR0000120222': { name: 'Safran', defaultPrice: 220.50, type: 'pea' },
+  'FR0000125486': { name: 'Vinci', defaultPrice: 112.50, type: 'pea' },
+  'FR0010251152': { name: 'EssilorLuxottica', defaultPrice: 215.00, type: 'pea' },
+  'NL0000226223': { name: 'Stellantis', defaultPrice: 12.50, type: 'pea' },
+
+  // Actions Internationales (CTO)
+  'US0378331005': { name: 'Apple Inc.', defaultPrice: 236.64, type: 'cto' },
+  'US5949181045': { name: 'Microsoft Corporation', defaultPrice: 435.07, type: 'cto' },
+  'US67066G1040': { name: 'NVIDIA Corporation', defaultPrice: 129.28, type: 'cto' },
+  'US02079K3059': { name: 'Alphabet Inc. (Google)', defaultPrice: 175.66, type: 'cto' },
+  'US0231351067': { name: 'Amazon.com, Inc.', defaultPrice: 185.43, type: 'cto' },
+  'US88160R1014': { name: 'Tesla, Inc.', defaultPrice: 220.70, type: 'cto' },
+  'US30303M1027': { name: 'Meta Platforms, Inc.', defaultPrice: 580.67, type: 'cto' }
+};
 
 export const PortfolioTab: React.FC<PortfolioTabProps> = ({
   data,
@@ -79,22 +111,68 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
   const [newImmoVal, setNewImmoVal] = useState<number>(250000);
   const [newImmoDebt, setNewImmoDebt] = useState<number>(180000);
   const [newImmoRate, setNewImmoRate] = useState<number>(2.5);
+  const [newImmoOwnership, setNewImmoOwnership] = useState<number>(100);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(val);
+  };
+
+  const formatUnitPrice = (val: number) => {
+    const decimals = val < 10 && val.toString().includes('.') && val.toString().split('.')[1]?.length > 2 ? 3 : 2;
+    return new Intl.NumberFormat('fr-FR', { 
+      style: 'currency', 
+      currency: 'EUR', 
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: 3 
+    }).format(val);
+  };
+
+  // Auto-fill stock name and default price based on ISIN
+  const handleIsinChange = (value: string) => {
+    const cleanIsin = value.toUpperCase().trim();
+    setNewIsin(cleanIsin);
+
+    // Look up in catalogue
+    const match = STOCK_CATALOG_BY_ISIN[cleanIsin];
+    if (match) {
+      setNewName(match.name);
+      if (match.defaultPrice) {
+        setNewPurchasePrice(match.defaultPrice);
+      }
+      if (match.type) {
+        setStockType(match.type);
+      }
+    } else if (cleanIsin.length >= 12) {
+      // If 12 characters and not in catalog, attempt server API lookup
+      fetch(`/api/quote?isin=${encodeURIComponent(cleanIsin)}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res?.name && res.name !== cleanIsin && res.name !== 'Titre') {
+            setNewName(res.name);
+          }
+          if (typeof res?.price === 'number' && res.price > 0) {
+            setNewPurchasePrice(res.price);
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   // Add stock line
   const handleAddStock = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newIsin && !newName) return;
+    const cleanIsin = newIsin.trim().toUpperCase();
+    const catalogMatch = STOCK_CATALOG_BY_ISIN[cleanIsin];
+    const initialCurrentPrice = catalogMatch?.defaultPrice || Number(newPurchasePrice) || 0;
+
     const item: StockLine = {
       id: `stock-${Date.now()}`,
-      isin: newIsin.toUpperCase() || 'FR0000000000',
-      name: newName || newIsin,
+      isin: cleanIsin || 'FR0000000000',
+      name: newName.trim() || catalogMatch?.name || cleanIsin,
       quantity: Number(newQty) || 0,
       purchasePrice: Number(newPurchasePrice) || 0,
-      currentPrice: Number(newPurchasePrice) || 0,
+      currentPrice: initialCurrentPrice,
       transactions: [
         {
           id: `tx-${Date.now()}`,
@@ -139,11 +217,6 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       updated.ctoLines = updated.ctoLines.filter(i => i.id !== id);
     }
     onDataChange(updated);
-  };
-
-  const handlePresetSelect = (preset: { isin: string; name: string }) => {
-    setNewIsin(preset.isin);
-    setNewName(preset.name);
   };
 
   // Bitcoin update
@@ -205,12 +278,14 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
   const handleAddImmo = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newImmoName) return;
+    const ownership = Number(newImmoOwnership) > 0 ? Math.min(100, Number(newImmoOwnership)) : 100;
     const item: RealEstateLine = {
       id: `immo-${Date.now()}`,
-      name: newImmoName,
+      name: newImmoName.trim(),
       estimatedValue: Number(newImmoVal),
       remainingDebt: Number(newImmoDebt),
-      annualReturnRate: Number(newImmoRate)
+      annualReturnRate: Number(newImmoRate),
+      ownershipPercentage: ownership
     };
     const updated = {
       ...data,
@@ -305,33 +380,47 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       {/* SUB-TAB 1: PEA & CTO */}
       {activeSubTab === 'pea_cto' && (
         <div className="space-y-6">
+          {/* Live Market Quotations Banner & Global Refresh Button */}
+          <div className={`rounded-3xl p-5 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+            isLight
+              ? 'bg-gradient-to-r from-blue-50/80 to-indigo-50/50 border-blue-200/80 shadow-sm'
+              : 'bg-gradient-to-r from-slate-900 to-slate-900/90 border-slate-800 shadow-xl'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                isLight ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+              }`}>
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className={`text-sm sm:text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Cotations en Direct Euronext Paris & Actions
+                </h3>
+                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Actualisation automatique de vos lignes PEA & CTO avec les derniers cours de bourse.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onRefreshPrices}
+              disabled={isRefreshing}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/25 text-xs sm:text-sm shrink-0 disabled:opacity-70"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing ? 'Actualisation...' : 'Actualiser les cours (PEA & CTO)'}</span>
+            </button>
+          </div>
+
           {/* Add Stock Form */}
           <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
-            <h3 className={`text-base font-bold mb-3 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              Ajouter une ligne d'action / ETF (PEA ou CTO)
-            </h3>
-            
-            {/* Presets */}
-            <div className="mb-4">
-              <span className={`text-xs block mb-2 font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                Suggestions rapides Euronext Paris (cliquez pour pré-remplir) :
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4">
+              <h3 className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Ajouter une ligne d'action / ETF (PEA ou CTO)
+              </h3>
+              <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                Renseignez le code ISIN pour auto-compléter le nom et la cotation
               </span>
-              <div className="flex flex-wrap gap-2">
-                {POPULAR_PRESETS.map((p, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handlePresetSelect(p)}
-                    className={`text-xs px-3 py-1.5 rounded-xl border transition ${
-                      isLight
-                        ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-                    }`}
-                  >
-                    {p.name} <span className="text-blue-600 dark:text-blue-400 font-mono font-medium">({p.isin})</span>
-                  </button>
-                ))}
-              </div>
             </div>
 
             <form onSubmit={handleAddStock} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -351,19 +440,22 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                 <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Code ISIN</label>
                 <input
                   type="text"
-                  placeholder="ex: IE000BI8OT95"
+                  placeholder="ex: FR001400U5Q4"
                   value={newIsin}
-                  onChange={(e) => setNewIsin(e.target.value)}
+                  onChange={(e) => handleIsinChange(e.target.value)}
                   className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nom / Libellé</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className={`block text-xs font-semibold ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nom / Libellé</label>
+                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Modifiable</span>
+                </div>
                 <input
                   type="text"
-                  placeholder="ex: Amundi MSCI World"
+                  placeholder="Rempli auto selon ISIN"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none ${inputBgClass}`}
@@ -461,8 +553,8 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                           </div>
                         </td>
                         <td className={`py-3.5 px-3 text-right font-medium font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{item.quantity}</td>
-                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>{formatCurrency(item.purchasePrice)}</td>
-                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatCurrency(item.currentPrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>{formatUnitPrice(item.purchasePrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatUnitPrice(item.currentPrice)}</td>
                         <td className={`py-3.5 px-3 text-right font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatCurrency(totalVal)}</td>
                         <td className={`py-3.5 px-3 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({gainPct.toFixed(1)}%)
@@ -524,9 +616,19 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
 
           {/* CTO Table */}
           <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
-            <h4 className={`text-base font-bold mb-4 flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              <span className="w-3 h-3 rounded-full bg-indigo-600 shadow-sm" /> CTO (Compte Titres Ordinaire)
-            </h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                <span className="w-3 h-3 rounded-full bg-indigo-600 shadow-sm" /> CTO (Compte Titres Ordinaire)
+              </h4>
+              <button
+                onClick={onRefreshPrices}
+                disabled={isRefreshing}
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Actualiser les cours
+              </button>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -567,8 +669,8 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                           </div>
                         </td>
                         <td className={`py-3.5 px-3 text-right font-medium font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{item.quantity}</td>
-                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>{formatCurrency(item.purchasePrice)}</td>
-                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatCurrency(item.currentPrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>{formatUnitPrice(item.purchasePrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatUnitPrice(item.currentPrice)}</td>
                         <td className={`py-3.5 px-3 text-right font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatCurrency(totalVal)}</td>
                         <td className={`py-3.5 px-3 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({gainPct.toFixed(1)}%)
@@ -968,8 +1070,10 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
         <div className="space-y-6">
           {/* Add Real Estate Form */}
           <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
-            <h3 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>Ajouter un bien immobilier & crédit associé</h3>
-            <form onSubmit={handleAddImmo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <h3 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              Ajouter un bien immobilier & crédit associé
+            </h3>
+            <form onSubmit={handleAddImmo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="sm:col-span-2">
                 <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nom du bien</label>
                 <input
@@ -983,7 +1087,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Valeur estimée actuelle (€)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Valeur estimée 100% (€)</label>
                 <input
                   type="number"
                   step="any"
@@ -995,12 +1099,26 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Capital restant dû (€)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Capital restant dû 100% (€)</label>
                 <input
                   type="number"
                   step="any"
                   value={newImmoDebt}
                   onChange={(e) => setNewImmoDebt(Number(e.target.value))}
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Quote-part (%)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  step="1"
+                  value={newImmoOwnership}
+                  onChange={(e) => setNewImmoOwnership(Number(e.target.value))}
                   className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
@@ -1018,7 +1136,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                 />
               </div>
 
-              <div className="sm:col-span-2 lg:col-span-5 flex justify-end">
+              <div className="sm:col-span-2 lg:col-span-6 flex justify-end">
                 <button
                   type="submit"
                   className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md shadow-cyan-600/30 text-sm flex items-center gap-2"
@@ -1031,7 +1149,17 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
 
           {/* Real Estate Table */}
           <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
-            <h4 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>Patrimoine Immobilier & Crédits en cours</h4>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <h4 className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Patrimoine Immobilier & Crédits en cours
+                </h4>
+                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Valorisation brute et nette ajustées selon votre quote-part détenue
+                </p>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -1039,21 +1167,70 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     isLight ? 'border-slate-200 text-slate-500 bg-slate-50/50' : 'border-slate-800 text-slate-400'
                   }`}>
                     <th className="py-3 px-3">Bien</th>
-                    <th className="py-3 px-3 text-right">Valeur estimée</th>
-                    <th className="py-3 px-3 text-right">Capital restant dû</th>
-                    <th className="py-3 px-3 text-right">Valeur nette</th>
+                    <th className="py-3 px-3 text-center">Quote-part</th>
+                    <th className="py-3 px-3 text-right">Valeur brute</th>
+                    <th className="py-3 px-3 text-right">Dette restante</th>
+                    <th className="py-3 px-3 text-right">Valeur nette retenue</th>
                     <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isLight ? 'divide-slate-200/80' : 'divide-slate-800/60'}`}>
                   {data.realEstateLines.map((item) => {
-                    const netVal = item.estimatedValue - item.remainingDebt;
+                    const ownership = typeof item.ownershipPercentage === 'number' && !isNaN(item.ownershipPercentage)
+                      ? Math.max(0, Math.min(100, item.ownershipPercentage))
+                      : 100;
+                    const ratio = ownership / 100;
+                    const effectiveGross = item.estimatedValue * ratio;
+                    const effectiveDebt = item.remainingDebt * ratio;
+                    const effectiveNet = (item.estimatedValue - item.remainingDebt) * ratio;
+
                     return (
                       <tr key={item.id} className={`transition ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}>
-                        <td className={`py-3.5 px-3 font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</td>
-                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatCurrency(item.estimatedValue)}</td>
-                        <td className="py-3.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400 font-semibold">-{formatCurrency(item.remainingDebt)}</td>
-                        <td className="py-3.5 px-3 text-right font-bold text-cyan-600 dark:text-cyan-400 font-mono">{formatCurrency(netVal)}</td>
+                        <td className="py-3.5 px-3">
+                          <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</div>
+                          <div className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                            Rendement : {item.annualReturnRate || 0} % / an
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold font-mono border ${
+                            ownership === 100
+                              ? (isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700')
+                              : (isLight ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30')
+                          }`}>
+                            {ownership}%
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <div className={`font-mono font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                            {formatCurrency(effectiveGross)}
+                          </div>
+                          {ownership < 100 && (
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              (100%: {formatCurrency(item.estimatedValue)})
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <div className="font-mono font-semibold text-rose-600 dark:text-rose-400">
+                            -{formatCurrency(effectiveDebt)}
+                          </div>
+                          {ownership < 100 && (
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              (100%: -{formatCurrency(item.remainingDebt)})
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <div className="font-bold text-cyan-600 dark:text-cyan-400 font-mono text-base">
+                            {formatCurrency(effectiveNet)}
+                          </div>
+                          {ownership < 100 && (
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              (100%: {formatCurrency(item.estimatedValue - item.remainingDebt)})
+                            </div>
+                          )}
+                        </td>
                         <td className="py-3.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
@@ -1085,7 +1262,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   })}
                   {data.realEstateLines.length === 0 && (
                     <tr>
-                      <td colSpan={5} className={`py-8 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                      <td colSpan={6} className={`py-8 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                         Aucun bien immobilier enregistré.
                       </td>
                     </tr>

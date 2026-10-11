@@ -22,9 +22,21 @@ export function calculateTotals(data: WealthData) {
   // Assurance Vie
   const assuranceVieGross = data.assuranceVieLines.reduce((sum, item) => sum + item.value, 0);
 
-  // Real Estate
-  const realEstateGross = data.realEstateLines.reduce((sum, item) => sum + item.estimatedValue, 0);
-  const realEstateDebt = data.realEstateLines.reduce((sum, item) => sum + item.remainingDebt, 0);
+  // Real Estate (prise en compte de la quote-part en %, défaut 100%)
+  const realEstateGross = data.realEstateLines.reduce((sum, item) => {
+    const ownership = typeof item.ownershipPercentage === 'number' && !isNaN(item.ownershipPercentage)
+      ? Math.max(0, Math.min(100, item.ownershipPercentage))
+      : 100;
+    return sum + (item.estimatedValue * (ownership / 100));
+  }, 0);
+
+  const realEstateDebt = data.realEstateLines.reduce((sum, item) => {
+    const ownership = typeof item.ownershipPercentage === 'number' && !isNaN(item.ownershipPercentage)
+      ? Math.max(0, Math.min(100, item.ownershipPercentage))
+      : 100;
+    return sum + (item.remainingDebt * (ownership / 100));
+  }, 0);
+
   const realEstateNet = realEstateGross - realEstateDebt;
 
   // Total Financial (Investments + Livrets + PEE + Assurance Vie)

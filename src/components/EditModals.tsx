@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StockLine, SimpleAssetLine, RealEstateLine } from '../types';
 import { useTheme } from '../context/ThemeContext';
-import { X, Check, Pencil } from 'lucide-react';
+import { X, Check, Pencil, RefreshCw } from 'lucide-react';
 
 /* -------------------------------------------------------------
    EDIT STOCK MODAL (PEA & CTO)
@@ -27,6 +27,23 @@ export const EditStockModal: React.FC<EditStockModalProps> = ({
   const [quantity, setQuantity] = useState(stock.quantity);
   const [purchasePrice, setPurchasePrice] = useState(stock.purchasePrice);
   const [currentPrice, setCurrentPrice] = useState(stock.currentPrice);
+  const [isFetchingPrice, setIsFetchingPrice] = useState(false);
+
+  const handleFetchCurrentPrice = async () => {
+    if (!isin) return;
+    setIsFetchingPrice(true);
+    try {
+      const res = await fetch(`/api/quote?isin=${encodeURIComponent(isin.trim().toUpperCase())}`);
+      if (res.ok) {
+        const d = await res.json();
+        if (typeof d?.price === 'number' && d.price > 0) {
+          setCurrentPrice(d.price);
+        }
+      }
+    } catch {} finally {
+      setIsFetchingPrice(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +135,18 @@ export const EditStockModal: React.FC<EditStockModalProps> = ({
             </div>
 
             <div>
-              <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Cours actuel (€)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className={`block text-xs font-semibold ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Cours actuel (€)</label>
+                <button
+                  type="button"
+                  onClick={handleFetchCurrentPrice}
+                  disabled={isFetchingPrice}
+                  className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isFetchingPrice ? 'animate-spin' : ''}`} />
+                  Direct
+                </button>
+              </div>
               <input
                 type="number"
                 step="any"
@@ -299,6 +327,9 @@ export const EditRealEstateModal: React.FC<EditRealEstateModalProps> = ({
   const [estimatedValue, setEstimatedValue] = useState(realEstate.estimatedValue);
   const [remainingDebt, setRemainingDebt] = useState(realEstate.remainingDebt);
   const [annualReturnRate, setAnnualReturnRate] = useState(realEstate.annualReturnRate);
+  const [ownershipPercentage, setOwnershipPercentage] = useState(
+    realEstate.ownershipPercentage !== undefined ? realEstate.ownershipPercentage : 100
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,7 +338,8 @@ export const EditRealEstateModal: React.FC<EditRealEstateModalProps> = ({
       name: name.trim() || realEstate.name,
       estimatedValue: Number(estimatedValue) || 0,
       remainingDebt: Number(remainingDebt) || 0,
-      annualReturnRate: Number(annualReturnRate) || 0
+      annualReturnRate: Number(annualReturnRate) || 0,
+      ownershipPercentage: Number(ownershipPercentage) > 0 ? Math.min(100, Number(ownershipPercentage)) : 100
     });
     onClose();
   };
@@ -315,6 +347,11 @@ export const EditRealEstateModal: React.FC<EditRealEstateModalProps> = ({
   const inputBgClass = isLight
     ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-cyan-500'
     : 'bg-slate-800 border-slate-700 text-white focus:border-cyan-500';
+
+  const ratio = (Number(ownershipPercentage) > 0 ? Math.min(100, Number(ownershipPercentage)) : 100) / 100;
+  const netTotal = Number(estimatedValue) - Number(remainingDebt);
+  const effectiveNet = netTotal * ratio;
+  const effectiveGross = Number(estimatedValue) * ratio;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -354,7 +391,7 @@ export const EditRealEstateModal: React.FC<EditRealEstateModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Valeur estimée (€)</label>
+              <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Valeur estimée 100% (€)</label>
               <input
                 type="number"
                 step="any"
@@ -366,7 +403,7 @@ export const EditRealEstateModal: React.FC<EditRealEstateModalProps> = ({
             </div>
 
             <div>
-              <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Capital restant dû (€)</label>
+              <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Capital restant dû 100% (€)</label>
               <input
                 type="number"
                 step="any"
@@ -378,25 +415,51 @@ export const EditRealEstateModal: React.FC<EditRealEstateModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Rendement annuel (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={annualReturnRate}
-              onChange={(e) => setAnnualReturnRate(Number(e.target.value))}
-              className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Quote-part détenue (%)</label>
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="100"
+                value={ownershipPercentage}
+                onChange={(e) => setOwnershipPercentage(Number(e.target.value))}
+                className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
+                required
+              />
+            </div>
+
+            <div>
+              <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Rendement annuel (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={annualReturnRate}
+                onChange={(e) => setAnnualReturnRate(Number(e.target.value))}
+                className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
+                required
+              />
+            </div>
           </div>
 
-          <div className={`p-3 rounded-xl border text-xs flex justify-between ${
-            isLight ? 'bg-cyan-50/60 border-cyan-200' : 'bg-slate-800/50 border-slate-700/50'
+          <div className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
+            isLight ? 'bg-cyan-50/70 border-cyan-200 text-cyan-950' : 'bg-slate-800/60 border-slate-700/60 text-slate-300'
           }`}>
-            <span className={isLight ? 'text-cyan-800 font-medium' : 'text-slate-400'}>Valeur nette calculée :</span>
-            <span className="font-bold text-cyan-600 dark:text-cyan-400 font-mono">
-              {(Number(estimatedValue) - Number(remainingDebt)).toLocaleString('fr-FR')} €
-            </span>
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-slate-500 dark:text-slate-400">Quote-part appliquée :</span>
+              <span className="font-bold font-mono text-cyan-600 dark:text-cyan-400">{ownershipPercentage} %</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-slate-500 dark:text-slate-400">Valorisation brute comptabilisée :</span>
+              <span className="font-bold font-mono">{effectiveGross.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</span>
+            </div>
+            <div className="flex justify-between items-center pt-1 border-t border-cyan-200/50 dark:border-slate-700">
+              <span className="font-bold text-slate-700 dark:text-white">Valeur nette au patrimoine :</span>
+              <span className="font-extrabold text-cyan-600 dark:text-cyan-400 font-mono text-sm">
+                {effectiveNet.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+              </span>
+            </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
