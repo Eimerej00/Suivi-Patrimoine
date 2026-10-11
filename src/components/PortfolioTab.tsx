@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WealthData, StockLine, SimpleAssetLine, RealEstateLine } from '../types';
+import { useTheme } from '../context/ThemeContext';
 import {
   TrendingUp,
   Plus,
@@ -41,6 +42,9 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
   onRefreshPrices,
   isRefreshing
 }) => {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+
   const [activeSubTab, setActiveSubTab] = useState<'pea_cto' | 'crypto' | 'epargne' | 'immobilier'>('pea_cto');
 
   // Modal states
@@ -121,7 +125,6 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       updated.ctoLines = updated.ctoLines.map(s => s.id === updatedStock.id ? updatedStock : s);
     }
     onDataChange(updated);
-    // Also sync activeHistoryStock if currently open
     if (activeHistoryStock && activeHistoryStock.stock.id === updatedStock.id) {
       setActiveHistoryStock({ type, stock: updatedStock });
     }
@@ -155,7 +158,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       }
     };
     onDataChange(updated);
-    alert('Position Bitcoin mise à jour avec succès !');
+    alert('Position Bitcoin enregistrée avec succès !');
   };
 
   // Add simple asset (PEE / Livret / Assurance Vie)
@@ -234,14 +237,25 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
     onDataChange(updated);
   };
 
+  const cardBgClass = isLight ? 'bg-white border-slate-200/90 shadow-sm' : 'bg-slate-900 border-slate-800 shadow-xl';
+  const inputBgClass = isLight
+    ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+    : 'bg-slate-800 border-slate-700 text-white focus:border-blue-500';
+
   return (
     <div className="space-y-6 pb-16">
       {/* Sub-tab Navigation */}
-      <div className="flex flex-wrap items-center gap-2 bg-slate-900 p-2 rounded-2xl border border-slate-800">
+      <div className={`flex flex-wrap items-center gap-2 p-1.5 rounded-2xl border transition ${
+        isLight ? 'bg-slate-100/90 border-slate-200' : 'bg-slate-900 border-slate-800'
+      }`}>
         <button
           onClick={() => setActiveSubTab('pea_cto')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-            activeSubTab === 'pea_cto' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+            activeSubTab === 'pea_cto'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+              : isLight
+                ? 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
           }`}
         >
           <Briefcase className="w-4 h-4" />
@@ -249,8 +263,12 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
         </button>
         <button
           onClick={() => setActiveSubTab('crypto')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-            activeSubTab === 'crypto' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+            activeSubTab === 'crypto'
+              ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25'
+              : isLight
+                ? 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
           }`}
         >
           <Coins className="w-4 h-4" />
@@ -258,17 +276,25 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
         </button>
         <button
           onClick={() => setActiveSubTab('epargne')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-            activeSubTab === 'epargne' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+            activeSubTab === 'epargne'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+              : isLight
+                ? 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          PEE, Livrets & Assurances Vie
+          PEE, Livrets & Assurance Vie
         </button>
         <button
           onClick={() => setActiveSubTab('immobilier')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-            activeSubTab === 'immobilier' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+            activeSubTab === 'immobilier'
+              ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/25'
+              : isLight
+                ? 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
           }`}
         >
           <Building2 className="w-4 h-4" />
@@ -280,21 +306,29 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       {activeSubTab === 'pea_cto' && (
         <div className="space-y-6">
           {/* Add Stock Form */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-4">Ajouter une ligne d'action / ETF (PEA ou CTO)</h3>
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h3 className={`text-base font-bold mb-3 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              Ajouter une ligne d'action / ETF (PEA ou CTO)
+            </h3>
             
             {/* Presets */}
             <div className="mb-4">
-              <span className="text-xs text-slate-400 block mb-2">Suggestions populaires Euronext Paris (cliquez pour remplir) :</span>
+              <span className={`text-xs block mb-2 font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                Suggestions rapides Euronext Paris (cliquez pour pré-remplir) :
+              </span>
               <div className="flex flex-wrap gap-2">
                 {POPULAR_PRESETS.map((p, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => handlePresetSelect(p)}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 transition"
+                    className={`text-xs px-3 py-1.5 rounded-xl border transition ${
+                      isLight
+                        ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                    }`}
                   >
-                    {p.name} <span className="text-blue-400 font-mono">({p.isin})</span>
+                    {p.name} <span className="text-blue-600 dark:text-blue-400 font-mono font-medium">({p.isin})</span>
                   </button>
                 ))}
               </div>
@@ -302,11 +336,11 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
 
             <form onSubmit={handleAddStock} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Type de compte</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Type de compte</label>
                 <select
                   value={stockType}
                   onChange={(e) => setStockType(e.target.value as 'pea' | 'cto')}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none ${inputBgClass}`}
                 >
                   <option value="pea">PEA</option>
                   <option value="cto">CTO (Compte Titres)</option>
@@ -314,49 +348,49 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Code ISIN</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Code ISIN</label>
                 <input
                   type="text"
                   placeholder="ex: IE000BI8OT95"
                   value={newIsin}
                   onChange={(e) => setNewIsin(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Nom / Libellé</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nom / Libellé</label>
                 <input
                   type="text"
                   placeholder="ex: Amundi MSCI World"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Nombre de parts</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nombre de parts</label>
                 <input
                   type="number"
                   step="any"
                   value={newQty}
                   onChange={(e) => setNewQty(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Prix d'achat unitaire (€)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Prix d'achat unitaire (€)</label>
                 <input
                   type="number"
                   step="any"
                   value={newPurchasePrice}
                   onChange={(e) => setNewPurchasePrice(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
@@ -364,7 +398,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
               <div className="sm:col-span-2 lg:col-span-5 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-blue-600/30 text-sm"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl transition flex items-center gap-2 shadow-md shadow-blue-600/30 text-sm"
                 >
                   <Plus className="w-4 h-4" /> Ajouter au portefeuille
                 </button>
@@ -373,35 +407,37 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
           </div>
 
           {/* PEA Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-bold text-white flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500" /> PEA (Plan d'Épargne en Actions)
+              <h4 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                <span className="w-3 h-3 rounded-full bg-blue-600 shadow-sm" /> PEA (Plan d'Épargne en Actions)
               </h4>
               <button
                 onClick={onRefreshPrices}
                 disabled={isRefreshing}
-                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20 transition"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Actualiser les cours Euronext
+                Actualiser les cours
               </button>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
-                    <th className="pb-3 font-semibold">Titre / ISIN</th>
-                    <th className="pb-3 font-semibold text-right">Qté</th>
-                    <th className="pb-3 font-semibold text-right">PRU (€)</th>
-                    <th className="pb-3 font-semibold text-right">Cours actuel</th>
-                    <th className="pb-3 font-semibold text-right">Valeur totale</th>
-                    <th className="pb-3 font-semibold text-right">Plus-value</th>
-                    <th className="pb-3 font-semibold text-right">Actions</th>
+                  <tr className={`border-b text-xs uppercase font-bold ${
+                    isLight ? 'border-slate-200 text-slate-500 bg-slate-50/50' : 'border-slate-800 text-slate-400'
+                  }`}>
+                    <th className="py-3 px-3">Titre / ISIN</th>
+                    <th className="py-3 px-3 text-right">Qté</th>
+                    <th className="py-3 px-3 text-right">PRU (€)</th>
+                    <th className="py-3 px-3 text-right">Cours actuel</th>
+                    <th className="py-3 px-3 text-right">Valeur totale</th>
+                    <th className="py-3 px-3 text-right">Plus-value</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className={`divide-y ${isLight ? 'divide-slate-200/80' : 'divide-slate-800/60'}`}>
                   {data.peaLines.map((item) => {
                     const totalVal = item.quantity * item.currentPrice;
                     const investedVal = item.quantity * item.purchasePrice;
@@ -410,51 +446,62 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     const txCount = item.transactions?.length || 0;
 
                     return (
-                      <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                        <td className="py-4">
-                          <div className="font-bold text-white">{item.name}</div>
-                          <div className="text-xs font-mono text-blue-400 flex items-center gap-2">
+                      <tr key={item.id} className={`transition ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}>
+                        <td className="py-3.5 px-3">
+                          <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</div>
+                          <div className="text-xs font-mono text-blue-600 dark:text-blue-400 flex items-center gap-2 mt-0.5">
                             <span>{item.isin}</span>
                             {txCount > 0 && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                                {txCount} {txCount === 1 ? 'achat' : 'achats'}
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-sans font-medium ${
+                                isLight ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-slate-800 text-slate-400 border-slate-700'
+                              }`}>
+                                {txCount} {txCount === 1 ? 'ordre' : 'ordres'}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-4 text-right font-medium text-slate-200 font-mono">{item.quantity}</td>
-                        <td className="py-4 text-right font-mono text-slate-300">{formatCurrency(item.purchasePrice)}</td>
-                        <td className="py-4 text-right font-mono text-slate-200">{formatCurrency(item.currentPrice)}</td>
-                        <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(totalVal)}</td>
-                        <td className={`py-4 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <td className={`py-3.5 px-3 text-right font-medium font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{item.quantity}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>{formatCurrency(item.purchasePrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatCurrency(item.currentPrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatCurrency(totalVal)}</td>
+                        <td className={`py-3.5 px-3 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({gainPct.toFixed(1)}%)
                         </td>
-                        <td className="py-4 text-right">
+                        <td className="py-3.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* DCA / Add Investment & History Button */}
                             <button
                               onClick={() => setActiveHistoryStock({ type: 'pea', stock: item })}
                               title="Ajouter un achat (DCA) & Voir l'historique"
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1 text-xs"
+                              className={`px-2.5 py-1.5 rounded-xl border transition flex items-center gap-1 text-xs font-semibold ${
+                                isLight
+                                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+                              }`}
                             >
                               <History className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline font-medium">Investir</span>
+                              <span className="hidden sm:inline">Investir</span>
                             </button>
 
-                            {/* Edit Button */}
                             <button
                               onClick={() => setEditingStock({ type: 'pea', stock: item })}
                               title="Modifier cette ligne"
-                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                              className={`p-1.5 rounded-xl border transition ${
+                                isLight
+                                  ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                  : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20'
+                              }`}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
 
-                            {/* Delete Button */}
                             <button
                               onClick={() => handleRemoveStock('pea', item.id)}
                               title="Supprimer cette ligne"
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                              className={`p-1.5 rounded-xl border transition ${
+                                isLight
+                                  ? 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border-slate-200'
+                                  : 'bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border-slate-700'
+                              }`}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -465,7 +512,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   })}
                   {data.peaLines.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 text-sm">
+                      <td colSpan={7} className={`py-8 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                         Aucune ligne dans le PEA. Ajoutez votre premier titre ci-dessus.
                       </td>
                     </tr>
@@ -476,25 +523,27 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
           </div>
 
           {/* CTO Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h4 className="text-md font-bold text-white mb-4 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-indigo-500" /> CTO (Compte Titres Ordinaire)
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h4 className={`text-base font-bold mb-4 flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <span className="w-3 h-3 rounded-full bg-indigo-600 shadow-sm" /> CTO (Compte Titres Ordinaire)
             </h4>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
-                    <th className="pb-3 font-semibold">Titre / ISIN</th>
-                    <th className="pb-3 font-semibold text-right">Qté</th>
-                    <th className="pb-3 font-semibold text-right">PRU (€)</th>
-                    <th className="pb-3 font-semibold text-right">Cours actuel</th>
-                    <th className="pb-3 font-semibold text-right">Valeur totale</th>
-                    <th className="pb-3 font-semibold text-right">Plus-value</th>
-                    <th className="pb-3 font-semibold text-right">Actions</th>
+                  <tr className={`border-b text-xs uppercase font-bold ${
+                    isLight ? 'border-slate-200 text-slate-500 bg-slate-50/50' : 'border-slate-800 text-slate-400'
+                  }`}>
+                    <th className="py-3 px-3">Titre / ISIN</th>
+                    <th className="py-3 px-3 text-right">Qté</th>
+                    <th className="py-3 px-3 text-right">PRU (€)</th>
+                    <th className="py-3 px-3 text-right">Cours actuel</th>
+                    <th className="py-3 px-3 text-right">Valeur totale</th>
+                    <th className="py-3 px-3 text-right">Plus-value</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className={`divide-y ${isLight ? 'divide-slate-200/80' : 'divide-slate-800/60'}`}>
                   {data.ctoLines.map((item) => {
                     const totalVal = item.quantity * item.currentPrice;
                     const investedVal = item.quantity * item.purchasePrice;
@@ -503,51 +552,62 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                     const txCount = item.transactions?.length || 0;
 
                     return (
-                      <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                        <td className="py-4">
-                          <div className="font-bold text-white">{item.name}</div>
-                          <div className="text-xs font-mono text-indigo-400 flex items-center gap-2">
+                      <tr key={item.id} className={`transition ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}>
+                        <td className="py-3.5 px-3">
+                          <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</div>
+                          <div className="text-xs font-mono text-indigo-600 dark:text-indigo-400 flex items-center gap-2 mt-0.5">
                             <span>{item.isin}</span>
                             {txCount > 0 && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                                {txCount} {txCount === 1 ? 'achat' : 'achats'}
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-sans font-medium ${
+                                isLight ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-slate-800 text-slate-400 border-slate-700'
+                              }`}>
+                                {txCount} {txCount === 1 ? 'ordre' : 'ordres'}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-4 text-right font-medium text-slate-200 font-mono">{item.quantity}</td>
-                        <td className="py-4 text-right font-mono text-slate-300">{formatCurrency(item.purchasePrice)}</td>
-                        <td className="py-4 text-right font-mono text-slate-200">{formatCurrency(item.currentPrice)}</td>
-                        <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(totalVal)}</td>
-                        <td className={`py-4 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <td className={`py-3.5 px-3 text-right font-medium font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{item.quantity}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>{formatCurrency(item.purchasePrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatCurrency(item.currentPrice)}</td>
+                        <td className={`py-3.5 px-3 text-right font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatCurrency(totalVal)}</td>
+                        <td className={`py-3.5 px-3 text-right font-semibold font-mono ${gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({gainPct.toFixed(1)}%)
                         </td>
-                        <td className="py-4 text-right">
+                        <td className="py-3.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* DCA / Add Investment & History Button */}
                             <button
                               onClick={() => setActiveHistoryStock({ type: 'cto', stock: item })}
                               title="Ajouter un achat (DCA) & Voir l'historique"
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1 text-xs"
+                              className={`px-2.5 py-1.5 rounded-xl border transition flex items-center gap-1 text-xs font-semibold ${
+                                isLight
+                                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+                              }`}
                             >
                               <History className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline font-medium">Investir</span>
+                              <span className="hidden sm:inline">Investir</span>
                             </button>
 
-                            {/* Edit Button */}
                             <button
                               onClick={() => setEditingStock({ type: 'cto', stock: item })}
                               title="Modifier cette ligne"
-                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                              className={`p-1.5 rounded-xl border transition ${
+                                isLight
+                                  ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                  : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20'
+                              }`}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
 
-                            {/* Delete Button */}
                             <button
                               onClick={() => handleRemoveStock('cto', item.id)}
                               title="Supprimer cette ligne"
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                              className={`p-1.5 rounded-xl border transition ${
+                                isLight
+                                  ? 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border-slate-200'
+                                  : 'bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border-slate-700'
+                              }`}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -558,7 +618,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   })}
                   {data.ctoLines.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 text-sm">
+                      <td colSpan={7} className={`py-8 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                         Aucune ligne dans le CTO.
                       </td>
                     </tr>
@@ -573,71 +633,75 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       {/* SUB-TAB 2: BITCOIN & CRYPTO */}
       {activeSubTab === 'crypto' && (
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+          <div className={`rounded-3xl p-6 sm:p-8 border transition-all ${cardBgClass}`}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-xl">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl border ${
+                  isLight ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                }`}>
                   ₿
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">Position Bitcoin (BTC/EUR)</h3>
-                  <p className="text-xs text-slate-400">Cours en temps réel synchronisé (Paymium / CoinGecko / Binance)</p>
+                  <h3 className={`text-lg sm:text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Position Bitcoin (BTC/EUR)</h3>
+                  <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Cours en direct synchronisé (Binance / Paymium / CoinGecko)</p>
                 </div>
               </div>
               <button
                 onClick={onRefreshPrices}
                 disabled={isRefreshing}
-                className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition flex items-center gap-2 shadow-lg shadow-amber-600/20"
+                className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-amber-600/25"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Actualiser le cours BTC
+                Actualiser le cours
               </button>
             </div>
 
             {/* Bitcoin Summary Card */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 p-6 rounded-2xl bg-slate-800/50 border border-slate-700/60 mb-6">
+            <div className={`grid grid-cols-1 sm:grid-cols-3 gap-6 p-6 rounded-2xl border mb-6 ${
+              isLight ? 'bg-amber-50/50 border-amber-200/80' : 'bg-slate-800/50 border-slate-700/60'
+            }`}>
               <div>
-                <span className="text-xs text-slate-400">Quantité détenue</span>
-                <div className="text-2xl font-extrabold text-white mt-1 font-mono">{data.bitcoin.amount} BTC</div>
+                <span className={`text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Quantité détenue</span>
+                <div className={`text-2xl font-extrabold mt-1 font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{data.bitcoin.amount} BTC</div>
               </div>
               <div>
-                <span className="text-xs text-slate-400">Cours actuel (EUR)</span>
-                <div className="text-2xl font-extrabold text-amber-400 mt-1 font-mono">{formatCurrency(data.bitcoin.currentPriceEur)}</div>
+                <span className={`text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Cours actuel (EUR)</span>
+                <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1 font-mono">{formatCurrency(data.bitcoin.currentPriceEur)}</div>
               </div>
               <div>
-                <span className="text-xs text-slate-400">Valeur totale</span>
-                <div className="text-2xl font-extrabold text-emerald-400 mt-1">{formatCurrency(data.bitcoin.amount * data.bitcoin.currentPriceEur)}</div>
+                <span className={`text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Valeur totale estimée</span>
+                <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 font-mono">{formatCurrency(data.bitcoin.amount * data.bitcoin.currentPriceEur)}</div>
               </div>
             </div>
 
             {/* Form to update BTC */}
             <form onSubmit={handleUpdateBtc} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Nombre de Bitcoins (BTC)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nombre de Bitcoins (BTC)</label>
                 <input
                   type="number"
                   step="any"
                   value={btcAmount}
                   onChange={(e) => setBtcAmount(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
+                  className={`w-full rounded-xl px-4 py-2.5 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Prix d'achat moyen (Pru en €)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Prix d'achat moyen (PRU en €)</label>
                 <input
                   type="number"
                   step="any"
                   value={btcPurchasePrice}
                   onChange={(e) => setBtcPurchasePrice(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
+                  className={`w-full rounded-xl px-4 py-2.5 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
               <div className="sm:col-span-2 flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-lg shadow-amber-600/30 text-sm"
+                  className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md shadow-amber-600/30 text-sm"
                 >
                   Enregistrer les modifications Bitcoin
                 </button>
@@ -651,15 +715,15 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       {activeSubTab === 'epargne' && (
         <div className="space-y-6">
           {/* Add Asset Form */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-4">Ajouter un Livret, PEE ou Assurance Vie</h3>
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h3 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>Ajouter un Livret, PEE ou Assurance Vie</h3>
             <form onSubmit={handleAddAsset} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Catégorie</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Catégorie</label>
                 <select
                   value={assetCategory}
                   onChange={(e) => setAssetCategory(e.target.value as 'pee' | 'livret' | 'assuranceVie')}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none ${inputBgClass}`}
                 >
                   <option value="livret">Livret & Épargne (Livret A, LDDS...)</option>
                   <option value="assuranceVie">Assurance Vie</option>
@@ -668,37 +732,37 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Nom du compte</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nom du compte</label>
                 <input
                   type="text"
-                  placeholder="ex: Livret A / AV Boursorama"
+                  placeholder="ex: Livret A / Assurance Vie Bourso"
                   value={newAssetName}
                   onChange={(e) => setNewAssetName(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Valeur actuelle (€)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Valeur actuelle (€)</label>
                 <input
                   type="number"
                   step="any"
                   value={newAssetValue}
                   onChange={(e) => setNewAssetValue(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Rendement net estimé (%/an)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Rendement net estimé (%/an)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={newAssetRate}
                   onChange={(e) => setNewAssetRate(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
@@ -706,7 +770,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
               <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/30 text-sm flex items-center gap-2"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-600/30 text-sm flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" /> Ajouter l'épargne
                 </button>
@@ -715,37 +779,47 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
           </div>
 
           {/* Livrets Section */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h4 className="text-md font-bold text-white mb-4">Livrets & Épargne de Précaution</h4>
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h4 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>Livrets & Épargne de Précaution</h4>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
-                    <th className="pb-3 font-semibold">Nom</th>
-                    <th className="pb-3 font-semibold text-right">Rendement net</th>
-                    <th className="pb-3 font-semibold text-right">Valeur actuelle</th>
-                    <th className="pb-3 font-semibold text-right">Actions</th>
+                  <tr className={`border-b text-xs uppercase font-bold ${
+                    isLight ? 'border-slate-200 text-slate-500 bg-slate-50/50' : 'border-slate-800 text-slate-400'
+                  }`}>
+                    <th className="py-3 px-3">Nom</th>
+                    <th className="py-3 px-3 text-right">Rendement net</th>
+                    <th className="py-3 px-3 text-right">Valeur actuelle</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className={`divide-y ${isLight ? 'divide-slate-200/80' : 'divide-slate-800/60'}`}>
                   {data.livretLines.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-4 font-bold text-white">{item.name}</td>
-                      <td className="py-4 text-right text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
-                      <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(item.value)}</td>
-                      <td className="py-4 text-right">
+                    <tr key={item.id} className={`transition ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}>
+                      <td className={`py-3.5 px-3 font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</td>
+                      <td className="py-3.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
+                      <td className={`py-3.5 px-3 text-right font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatCurrency(item.value)}</td>
+                      <td className="py-3.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setEditingSimpleAsset({ category: 'livret', asset: item, label: 'Livret / Épargne' })}
                             title="Modifier ce livret"
-                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                            className={`p-1.5 rounded-xl border transition ${
+                              isLight
+                                ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20'
+                            }`}
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleRemoveAsset('livret', item.id)}
                             title="Supprimer"
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                            className={`p-1.5 rounded-xl border transition ${
+                              isLight
+                                ? 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border-slate-200'
+                                : 'bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border-slate-700'
+                            }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -755,7 +829,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   ))}
                   {data.livretLines.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-500 text-xs">
+                      <td colSpan={4} className={`py-6 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                         Aucun livret enregistré.
                       </td>
                     </tr>
@@ -766,37 +840,47 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
           </div>
 
           {/* Assurance Vie Section */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h4 className="text-md font-bold text-white mb-4">Assurance Vie</h4>
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h4 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>Assurance Vie</h4>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
-                    <th className="pb-3 font-semibold">Nom</th>
-                    <th className="pb-3 font-semibold text-right">Rendement net</th>
-                    <th className="pb-3 font-semibold text-right">Valeur actuelle</th>
-                    <th className="pb-3 font-semibold text-right">Actions</th>
+                  <tr className={`border-b text-xs uppercase font-bold ${
+                    isLight ? 'border-slate-200 text-slate-500 bg-slate-50/50' : 'border-slate-800 text-slate-400'
+                  }`}>
+                    <th className="py-3 px-3">Nom</th>
+                    <th className="py-3 px-3 text-right">Rendement net</th>
+                    <th className="py-3 px-3 text-right">Valeur actuelle</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className={`divide-y ${isLight ? 'divide-slate-200/80' : 'divide-slate-800/60'}`}>
                   {data.assuranceVieLines.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-4 font-bold text-white">{item.name}</td>
-                      <td className="py-4 text-right text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
-                      <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(item.value)}</td>
-                      <td className="py-4 text-right">
+                    <tr key={item.id} className={`transition ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}>
+                      <td className={`py-3.5 px-3 font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</td>
+                      <td className="py-3.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
+                      <td className={`py-3.5 px-3 text-right font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatCurrency(item.value)}</td>
+                      <td className="py-3.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setEditingSimpleAsset({ category: 'assuranceVie', asset: item, label: 'Assurance Vie' })}
                             title="Modifier cette assurance vie"
-                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                            className={`p-1.5 rounded-xl border transition ${
+                              isLight
+                                ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20'
+                            }`}
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleRemoveAsset('assuranceVie', item.id)}
                             title="Supprimer"
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                            className={`p-1.5 rounded-xl border transition ${
+                              isLight
+                                ? 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border-slate-200'
+                                : 'bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border-slate-700'
+                            }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -806,7 +890,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   ))}
                   {data.assuranceVieLines.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-500 text-xs">
+                      <td colSpan={4} className={`py-6 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                         Aucune assurance vie enregistrée.
                       </td>
                     </tr>
@@ -817,37 +901,47 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
           </div>
 
           {/* PEE Section */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h4 className="text-md font-bold text-white mb-4">PEE (Plan d'Épargne Entreprise)</h4>
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h4 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>PEE (Plan d'Épargne Entreprise)</h4>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
-                    <th className="pb-3 font-semibold">Nom</th>
-                    <th className="pb-3 font-semibold text-right">Rendement net</th>
-                    <th className="pb-3 font-semibold text-right">Valeur actuelle</th>
-                    <th className="pb-3 font-semibold text-right">Actions</th>
+                  <tr className={`border-b text-xs uppercase font-bold ${
+                    isLight ? 'border-slate-200 text-slate-500 bg-slate-50/50' : 'border-slate-800 text-slate-400'
+                  }`}>
+                    <th className="py-3 px-3">Nom</th>
+                    <th className="py-3 px-3 text-right">Rendement net</th>
+                    <th className="py-3 px-3 text-right">Valeur actuelle</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className={`divide-y ${isLight ? 'divide-slate-200/80' : 'divide-slate-800/60'}`}>
                   {data.peeLines.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-4 font-bold text-white">{item.name}</td>
-                      <td className="py-4 text-right text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
-                      <td className="py-4 text-right font-bold text-white font-mono">{formatCurrency(item.value)}</td>
-                      <td className="py-4 text-right">
+                    <tr key={item.id} className={`transition ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}>
+                      <td className={`py-3.5 px-3 font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</td>
+                      <td className="py-3.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold font-mono">{item.annualReturnRate}% / an</td>
+                      <td className={`py-3.5 px-3 text-right font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatCurrency(item.value)}</td>
+                      <td className="py-3.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setEditingSimpleAsset({ category: 'pee', asset: item, label: 'PEE (Épargne Entreprise)' })}
                             title="Modifier ce PEE"
-                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                            className={`p-1.5 rounded-xl border transition ${
+                              isLight
+                                ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20'
+                            }`}
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleRemoveAsset('pee', item.id)}
                             title="Supprimer"
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                            className={`p-1.5 rounded-xl border transition ${
+                              isLight
+                                ? 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border-slate-200'
+                                : 'bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border-slate-700'
+                            }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -857,7 +951,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   ))}
                   {data.peeLines.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-500 text-xs">
+                      <td colSpan={4} className={`py-6 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                         Aucun PEE enregistré.
                       </td>
                     </tr>
@@ -873,53 +967,53 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
       {activeSubTab === 'immobilier' && (
         <div className="space-y-6">
           {/* Add Real Estate Form */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-4">Ajouter un bien immobilier & crédit associé</h3>
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h3 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>Ajouter un bien immobilier & crédit associé</h3>
             <form onSubmit={handleAddImmo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-slate-400 mb-1">Nom du bien</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Nom du bien</label>
                 <input
                   type="text"
                   placeholder="ex: Résidence Principale / Appartement Locatif"
                   value={newImmoName}
                   onChange={(e) => setNewImmoName(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Valeur estimée actuelle (€)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Valeur estimée actuelle (€)</label>
                 <input
                   type="number"
                   step="any"
                   value={newImmoVal}
                   onChange={(e) => setNewImmoVal(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Capital restant dû (€)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Capital restant dû (€)</label>
                 <input
                   type="number"
                   step="any"
                   value={newImmoDebt}
                   onChange={(e) => setNewImmoDebt(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Rendement annuel (%)</label>
+                <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Rendement annuel (%)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={newImmoRate}
                   onChange={(e) => setNewImmoRate(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono"
+                  className={`w-full rounded-xl px-3 py-2 text-sm border focus:outline-none font-mono ${inputBgClass}`}
                   required
                 />
               </div>
@@ -927,7 +1021,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
               <div className="sm:col-span-2 lg:col-span-5 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-lg shadow-cyan-600/30 text-sm flex items-center gap-2"
+                  className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md shadow-cyan-600/30 text-sm flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" /> Ajouter le bien immobilier
                 </button>
@@ -936,41 +1030,51 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
           </div>
 
           {/* Real Estate Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h4 className="text-md font-bold text-white mb-4">Patrimoine Immobilier & Crédits en cours</h4>
+          <div className={`rounded-3xl p-6 border transition-all ${cardBgClass}`}>
+            <h4 className={`text-base font-bold mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>Patrimoine Immobilier & Crédits en cours</h4>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase">
-                    <th className="pb-3 font-semibold">Bien</th>
-                    <th className="pb-3 font-semibold text-right">Valeur estimée</th>
-                    <th className="pb-3 font-semibold text-right">Capital restant dû</th>
-                    <th className="pb-3 font-semibold text-right">Valeur nette</th>
-                    <th className="pb-3 font-semibold text-right">Actions</th>
+                  <tr className={`border-b text-xs uppercase font-bold ${
+                    isLight ? 'border-slate-200 text-slate-500 bg-slate-50/50' : 'border-slate-800 text-slate-400'
+                  }`}>
+                    <th className="py-3 px-3">Bien</th>
+                    <th className="py-3 px-3 text-right">Valeur estimée</th>
+                    <th className="py-3 px-3 text-right">Capital restant dû</th>
+                    <th className="py-3 px-3 text-right">Valeur nette</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className={`divide-y ${isLight ? 'divide-slate-200/80' : 'divide-slate-800/60'}`}>
                   {data.realEstateLines.map((item) => {
                     const netVal = item.estimatedValue - item.remainingDebt;
                     return (
-                      <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                        <td className="py-4 font-bold text-white">{item.name}</td>
-                        <td className="py-4 text-right font-mono text-slate-200">{formatCurrency(item.estimatedValue)}</td>
-                        <td className="py-4 text-right font-mono text-rose-400">-{formatCurrency(item.remainingDebt)}</td>
-                        <td className="py-4 text-right font-bold text-cyan-400 font-mono">{formatCurrency(netVal)}</td>
-                        <td className="py-4 text-right">
+                      <tr key={item.id} className={`transition ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}>
+                        <td className={`py-3.5 px-3 font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</td>
+                        <td className={`py-3.5 px-3 text-right font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{formatCurrency(item.estimatedValue)}</td>
+                        <td className="py-3.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400 font-semibold">-{formatCurrency(item.remainingDebt)}</td>
+                        <td className="py-3.5 px-3 text-right font-bold text-cyan-600 dark:text-cyan-400 font-mono">{formatCurrency(netVal)}</td>
+                        <td className="py-3.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => setEditingRealEstate(item)}
                               title="Modifier ce bien immobilier"
-                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition"
+                              className={`p-1.5 rounded-xl border transition ${
+                                isLight
+                                  ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                  : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20'
+                              }`}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleRemoveImmo(item.id)}
                               title="Supprimer"
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition"
+                              className={`p-1.5 rounded-xl border transition ${
+                                isLight
+                                  ? 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border-slate-200'
+                                  : 'bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border-slate-700'
+                              }`}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -981,7 +1085,7 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   })}
                   {data.realEstateLines.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-500 text-sm">
+                      <td colSpan={5} className={`py-8 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                         Aucun bien immobilier enregistré.
                       </td>
                     </tr>

@@ -23,7 +23,7 @@ const isGitHubPages = process.env.GITHUB_ACTIONS === 'true';
 
 export default defineConfig(() => {
   return {
-    base: isGitHubPages ? '/Suivi-Patrimoine/' : './',
+    base: './',
     plugins: [react(), tailwindcss()],
     define: {
       '__FIREBASE_DEFAULTS__': JSON.stringify({

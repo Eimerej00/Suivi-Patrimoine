@@ -1,46 +1,81 @@
 import React from 'react';
-import { Shield, Lock, AlertTriangle, ArrowRight, Wallet } from 'lucide-react';
+import { Shield, Lock, AlertTriangle, ArrowRight, Wallet, UserCheck, Sun, Moon, Info } from 'lucide-react';
 import { ALLOWED_EMAIL } from '../lib/firebase';
+import { useTheme } from '../context/ThemeContext';
 
 interface LoginScreenProps {
   onGoogleSignIn: () => void;
+  onContinueOffline: () => void;
   unauthorizedEmail: string | null;
+  authError: string | null;
   onClearUnauthorized: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onGoogleSignIn,
+  onContinueOffline,
   unauthorizedEmail,
+  authError,
   onClearUnauthorized
 }) => {
-  return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
+  const { theme, toggleTheme } = useTheme();
+  const isLight = theme === 'light';
 
-      <div className="max-w-md w-full bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-blue-950/50 relative z-10">
+  return (
+    <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden transition-colors ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
+    }`}>
+      {/* Background ambient lighting */}
+      <div className={`absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-opacity ${
+        isLight ? 'bg-blue-200/50 opacity-70' : 'bg-blue-600/15 opacity-100'
+      }`} />
+      <div className={`absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-opacity ${
+        isLight ? 'bg-indigo-200/40 opacity-60' : 'bg-indigo-600/15 opacity-100'
+      }`} />
+
+      {/* Floating Theme Toggle */}
+      <button
+        onClick={toggleTheme}
+        className={`absolute top-6 right-6 p-2.5 rounded-2xl border transition-all shadow-sm flex items-center gap-2 text-xs font-semibold ${
+          isLight
+            ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm'
+            : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+        }`}
+        title="Basculer le thème"
+      >
+        {isLight ? <Moon className="w-4 h-4 text-slate-600" /> : <Sun className="w-4 h-4 text-amber-400" />}
+        <span className="hidden sm:inline">{isLight ? 'Mode sombre' : 'Mode clair'}</span>
+      </button>
+
+      <div className={`max-w-md w-full rounded-3xl p-8 border shadow-2xl relative z-10 transition-all ${
+        isLight
+          ? 'bg-white/95 backdrop-blur-xl border-slate-200/90 shadow-xl shadow-slate-200/60'
+          : 'bg-slate-900/90 backdrop-blur-xl border-slate-800 shadow-2xl shadow-blue-950/50'
+      }`}>
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/25 mb-4">
             <Wallet className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Patrimoine & Wealth Tracker</h2>
-          <p className="text-sm text-slate-400 mt-2">
-            Application sécurisée de gestion et projection de patrimoine privé.
+          <h2 className={`text-2xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            Patrimoine & Wealth Tracker
+          </h2>
+          <p className={`text-sm mt-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            Gestion, cotations en temps réel et projections patrimoniales privées.
           </p>
         </div>
 
+        {/* Unauthorized Whitelist Alert */}
         {unauthorizedEmail && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-sm flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold">Accès refusé</p>
-              <p className="text-xs text-rose-300/80 mt-1">
-                Le compte <span className="underline font-mono">{unauthorizedEmail}</span> n'est pas autorisé. Seul le propriétaire (<span className="font-mono">{ALLOWED_EMAIL}</span>) a accès à ce carnet de patrimoine.
+              <p className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-1">
+                Le compte <span className="underline font-mono">{unauthorizedEmail}</span> n'est pas autorisé. Seul le propriétaire (<span className="font-mono">{ALLOWED_EMAIL}</span>) a accès à ce carnet.
               </p>
               <button
                 onClick={onClearUnauthorized}
-                className="mt-3 text-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 px-3 py-1 rounded-lg transition"
+                className="mt-3 text-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-800 dark:text-rose-200 px-3 py-1 rounded-lg transition"
               >
                 Réessayer avec un autre compte
               </button>
@@ -48,20 +83,42 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         )}
 
+        {/* Auth Error Banner (e.g. Unauthorized Domain on GitHub Pages) */}
+        {authError && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-3">
+            <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold">Information d'authentification</p>
+              <p className="text-amber-700 dark:text-amber-300/90 leading-relaxed">
+                {authError}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/60 text-xs text-slate-300 space-y-2">
-            <div className="flex items-center gap-2 font-medium text-slate-200">
-              <Shield className="w-4 h-4 text-emerald-400" />
+          <div className={`p-4 rounded-2xl border text-xs space-y-2 ${
+            isLight
+              ? 'bg-slate-50 border-slate-200 text-slate-600'
+              : 'bg-slate-800/50 border-slate-700/60 text-slate-300'
+          }`}>
+            <div className={`flex items-center gap-2 font-medium ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+              <Shield className="w-4 h-4 text-emerald-500" />
               Sécurité stricte par Whitelist Google
             </div>
-            <p className="text-slate-400 leading-relaxed">
-              Authentification Google requise. Réservée exclusivement à l'adresse administrateur configurée.
+            <p className={`leading-relaxed ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              Authentification Google requise pour la synchronisation Cloud Firestore. Réservée à l'adresse <span className="font-mono font-semibold">{ALLOWED_EMAIL}</span>.
             </p>
           </div>
 
+          {/* Google Sign-in Button */}
           <button
             onClick={onGoogleSignIn}
-            className="w-full py-3.5 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded-2xl shadow-lg transition flex items-center justify-center gap-3 group"
+            className={`w-full py-3.5 px-4 font-semibold rounded-2xl shadow-md transition flex items-center justify-center gap-3 group border ${
+              isLight
+                ? 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:shadow-lg'
+                : 'bg-white hover:bg-slate-100 text-slate-900 border-transparent shadow-lg'
+            }`}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -82,13 +139,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               />
             </svg>
             <span>Se connecter avec Google</span>
-            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
           </button>
+
+          {/* Local / Offline mode fallback button */}
+          <div className="pt-2 text-center">
+            <button
+              onClick={onContinueOffline}
+              className={`w-full py-2.5 px-4 text-xs font-semibold rounded-2xl border transition flex items-center justify-center gap-2 ${
+                isLight
+                  ? 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-slate-200'
+                  : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5 text-blue-500" />
+              <span>Consulter / Accéder en mode local (sans compte)</span>
+            </button>
+          </div>
         </div>
 
-        <div className="mt-8 text-center text-xs text-slate-500 flex items-center justify-center gap-1.5">
-          <Lock className="w-3.5 h-3.5 text-slate-600" />
-          Chiffrement SSL & Synchronisation Cloud Firestore
+        <div className={`mt-8 text-center text-xs flex items-center justify-center gap-1.5 ${
+          isLight ? 'text-slate-400' : 'text-slate-500'
+        }`}>
+          <Lock className={`w-3.5 h-3.5 ${isLight ? 'text-slate-400' : 'text-slate-600'}`} />
+          Chiffrement SSL & Stockage sécurisé
         </div>
       </div>
     </div>

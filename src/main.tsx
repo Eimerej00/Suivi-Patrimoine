@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
+import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 
 interface Props {
@@ -29,18 +30,18 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
-            <h2 className="text-lg font-bold text-rose-400">Erreur de chargement</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Une erreur inattendue est survenue lors de l'affichage de l'application :
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+            <h2 className="text-lg font-bold text-rose-600 dark:text-rose-400">Erreur d'affichage</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Une anomalie est survenue lors de l'exécution de l'application :
             </p>
-            <pre className="p-3 bg-slate-950 rounded-xl text-xs text-rose-300 font-mono overflow-x-auto border border-slate-800">
+            <pre className="p-3 bg-slate-100 dark:bg-slate-950 rounded-xl text-xs text-rose-600 dark:text-rose-300 font-mono overflow-x-auto border border-slate-200 dark:border-slate-800">
               {this.state.error?.message || 'Erreur inconnue'}
             </pre>
             <button
               onClick={() => window.location.reload()}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/20"
             >
               Recharger la page
             </button>
@@ -56,7 +57,9 @@ const rootEl = document.getElementById('root');
 if (rootEl) {
   createRoot(rootEl).render(
     <ErrorBoundary>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

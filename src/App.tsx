@@ -19,12 +19,18 @@ import { Navbar } from './components/Navbar';
 import { OverviewTab } from './components/OverviewTab';
 import { PortfolioTab } from './components/PortfolioTab';
 import { SettingsTab } from './components/SettingsTab';
+import { useTheme } from './context/ThemeContext';
 import { Loader2 } from 'lucide-react';
 
 export default function App() {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+
   const [user, setUser] = useState<User | null>(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [unauthorizedEmail, setUnauthorizedEmail] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'portfolio' | 'settings'>('overview');
   const [wealthData, setWealthData] = useState<WealthData>(DEFAULT_WEALTH_DATA);
@@ -54,10 +60,16 @@ export default function App() {
     };
   }, []);
 
-  // Auth state observer & Whitelist enforcement
+  // Auth state observer with safety timeout (guarantees no white page/stuck loader)
   useEffect(() => {
+    // Safety timeout: Never leave the user stuck on loading spinner for more than 2.5 seconds
+    const timeoutTimer = setTimeout(() => {
+      setAuthLoading(false);
+    }, 2500);
+
     if (!auth) {
       setAuthLoading(false);
+      clearTimeout(timeoutTimer);
       return;
     }
 
@@ -65,11 +77,14 @@ export default function App() {
       const unsubscribe = onAuthStateChanged(
         auth,
         async (currentUser) => {
+          clearTimeout(timeoutTimer);
           if (currentUser) {
             const email = currentUser.email?.toLowerCase();
             if (email === ALLOWED_EMAIL.toLowerCase()) {
               setUser(currentUser);
+              setIsGuestMode(false);
               setUnauthorizedEmail(null);
+              setAuthError(null);
               // Load data from Firestore
               await loadFirestoreData(currentUser.uid);
             } else {
@@ -85,19 +100,25 @@ export default function App() {
         },
         (error) => {
           console.warn('Auth state error:', error);
+          clearTimeout(timeoutTimer);
           setAuthLoading(false);
         }
       );
 
-      return () => unsubscribe();
+      return () => {
+        clearTimeout(timeoutTimer);
+        unsubscribe();
+      };
     } catch (e) {
       console.warn('Error setting up auth observer:', e);
+      clearTimeout(timeoutTimer);
       setAuthLoading(false);
     }
   }, []);
 
   // Load Firestore data
   const loadFirestoreData = async (uid: string) => {
+    if (!db) return;
     try {
       const docRef = doc(db, 'users', uid, 'wealthData', 'portfolio');
       const docSnap = await getDoc(docRef);
@@ -105,32 +126,39 @@ export default function App() {
         const data = docSnap.data() as WealthData;
         if (data && data.peaLines) {
           setWealthData(data);
+          try {
+            localStorage.setItem('patrimoine_wealth_data', JSON.stringify(data));
+          } catch {}
         }
       } else {
-        // Initialize with default data
-        await setDoc(docRef, DEFAULT_WEALTH_DATA);
+        // Initialize with current/default data
+        await setDoc(docRef, wealthData);
       }
 
-      // Real-time listener
-      onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data() as WealthData;
+      // Real-time Firestore listener
+      onSnapshot(docRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data() as WealthData;
           if (data && data.peaLines) {
             setWealthData(data);
+            try {
+              localStorage.setItem('patrimoine_wealth_data', JSON.stringify(data));
+            } catch {}
           }
         }
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading Firestore data:', err);
     }
   };
 
-  // Save wealth data to Firestore & local state
+  // Save wealth data to Firestore & localStorage
   const handleDataChange = async (newData: WealthData) => {
     setWealthData(newData);
     try {
       localStorage.setItem('patrimoine_wealth_data', JSON.stringify(newData));
     } catch {}
+
     if (user && db) {
       try {
         const docRef = doc(db, 'users', user.uid, 'wealthData', 'portfolio');
@@ -141,31 +169,50 @@ export default function App() {
     }
   };
 
-  // Google Sign-In
+  // Google Sign-In with friendly error handling for GitHub Pages
   const handleGoogleSignIn = async () => {
+    setAuthError(null);
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const email = result.user.email?.toLowerCase();
-      if (email !== ALLOWED_EMAIL.toLowerCase()) {
+      if (email === ALLOWED_EMAIL.toLowerCase()) {
+        setUser(result.user);
+        setIsGuestMode(false);
+        setUnauthorizedEmail(null);
+      } else {
         await signOut(auth);
         setUnauthorizedEmail(result.user.email);
         setUser(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Sign-in error:', err);
+      if (err.code === 'auth/unauthorized-domain') {
+        setAuthError(
+          `Le domaine actuel (${window.location.hostname}) n'est pas autorisé dans votre console Firebase. Pour activer la connexion Google ici, ajoutez "${window.location.hostname}" dans Firebase > Authentication > Settings > Authorized domains. Vous pouvez utiliser le mode local ci-dessous en attendant.`
+        );
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        // User just closed popup
+      } else {
+        setAuthError(err.message || 'Erreur lors de la tentative de connexion avec Google.');
+      }
     }
   };
 
   const handleSignOut = async () => {
-    await signOut(auth);
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch {}
+    }
     setUser(null);
+    setIsGuestMode(false);
   };
 
   // Refresh live prices (Euronext ISINs & Bitcoin)
   const handleRefreshPrices = async () => {
     setIsRefreshing(true);
     try {
-      // 1. Fetch Bitcoin price (try local backend first, then direct public API for GitHub Pages)
+      // 1. Fetch Bitcoin price (local API first, then Binance public CORS fallback)
       let newBtcPrice = wealthData.bitcoin.currentPriceEur;
       try {
         const btcRes = await fetch('/api/btc');
@@ -173,24 +220,21 @@ export default function App() {
           const btcData = await btcRes.json();
           if (btcData?.price) newBtcPrice = Number(btcData.price);
         } else {
-          throw new Error('Local API unavailable, falling back to public provider');
+          throw new Error('Local API unavailable');
         }
       } catch {
-        // Direct public fallback (CORS friendly, works on GitHub Pages static)
         try {
           const publicRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCEUR');
           if (publicRes.ok) {
             const data = await publicRes.json();
             if (data?.price) newBtcPrice = parseFloat(data.price);
           }
-        } catch {
-          // Keep current price
-        }
+        } catch {}
       }
 
-      // 2. Popular stock ISIN fallback prices (for GitHub Pages static hosting)
+      // 2. Accurate Euronext ISIN reference prices (including Amundi Core MSCI World MWRD)
       const STATIC_ISIN_PRICES: Record<string, number> = {
-        'IE000BI8OT95': 26.80, // Amundi Core MSCI World (MWRD)
+        'IE000BI8OT95': 26.80, // Amundi Core MSCI World UCITS ETF (MWRD)
         'FR0000120172': 780.50, // LVMH
         'FR0000121014': 62.40,  // TotalEnergies
         'FR0000120321': 410.00, // L'Oreal
@@ -209,9 +253,7 @@ export default function App() {
             const q = await res.json();
             if (q?.price) return Number(q.price);
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
         return STATIC_ISIN_PRICES[isin.toUpperCase()] || fallbackPrice;
       };
 
@@ -263,27 +305,40 @@ export default function App() {
     handleDataChange(DEFAULT_WEALTH_DATA);
   };
 
+  // Loading state with theme styling
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
-        <p className="text-sm font-medium text-slate-400">Chargement de votre patrimoine...</p>
+      <div className={`min-h-screen flex flex-col items-center justify-center transition-colors ${
+        isLight ? 'bg-slate-50 text-slate-800' : 'bg-slate-950 text-slate-100'
+      }`}>
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-4" />
+        <p className={`text-sm font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+          Chargement de votre patrimoine...
+        </p>
       </div>
     );
   }
 
-  if (!user) {
+  // Not signed in and not in guest/local mode
+  if (!user && !isGuestMode) {
     return (
       <LoginScreen
         onGoogleSignIn={handleGoogleSignIn}
+        onContinueOffline={() => setIsGuestMode(true)}
         unauthorizedEmail={unauthorizedEmail}
-        onClearUnauthorized={() => setUnauthorizedEmail(null)}
+        authError={authError}
+        onClearUnauthorized={() => {
+          setUnauthorizedEmail(null);
+          setAuthError(null);
+        }}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+    <div className={`min-h-screen flex flex-col selection:bg-blue-600 selection:text-white transition-colors ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
+    }`}>
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
