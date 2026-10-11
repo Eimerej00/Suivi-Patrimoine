@@ -1,10 +1,10 @@
 {
-  "id": "./",
+  "id": "/Suivi-Patrimoine-v2/",
   "name": "Patrimoine & Wealth Tracker",
   "short_name": "Patrimoine",
   "description": "Application de suivi et gestion de patrimoine net et brut, PEA, CTO, Bitcoin, Immobilier et PEE.",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0f172a",
