@@ -148,6 +148,9 @@ async function startServer() {
     }
   });
 
+  // Serve static assets from public folder (icons, manifest, etc.)
+  app.use(express.static(path.join(__dirname, 'public')));
+
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'dist')));
     app.get('*', (req, res) => {

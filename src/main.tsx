@@ -1,8 +1,12 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
 import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
+
+// Automatically register PWA service worker for offline support and installability
+registerSW({ immediate: true });
 
 interface Props {
   children: ReactNode;

@@ -2,6 +2,7 @@ import React from 'react';
 import { LayoutDashboard, Wallet, Settings, LogOut, ShieldCheck, RefreshCw, Sun, Moon } from 'lucide-react';
 import { User } from '../lib/firebase';
 import { useTheme } from '../context/ThemeContext';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavbarProps {
   activeTab: 'overview' | 'portfolio' | 'settings';
@@ -119,6 +120,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-500' : ''}`} />
               <span className="hidden sm:inline">Actualiser</span>
             </button>
+
+            {/* PWA Install Button */}
+            <PWAInstallButton variant="compact" />
 
             {/* Online status */}
             <div className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${

@@ -3,6 +3,7 @@ import { WealthData } from '../types';
 import { Download, Upload, RotateCcw, ShieldCheck, User as UserIcon, Database, CheckCircle2, Cloud, Sparkles, Smartphone } from 'lucide-react';
 import { User, ALLOWED_EMAIL } from '../lib/firebase';
 import { useTheme } from '../context/ThemeContext';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface SettingsTabProps {
   data: WealthData;
@@ -143,6 +144,29 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             accept=".json"
             className="hidden"
           />
+        </div>
+      </div>
+
+      {/* PWA Mobile & Desktop Application Card */}
+      <div className={`rounded-3xl p-6 sm:p-8 border transition-all space-y-4 ${cardClass}`}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              Application Mobile & Bureau (PWA)
+            </h3>
+            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              Installez l'application directement sur votre smartphone (iOS / Android) ou votre ordinateur
+            </p>
+          </div>
+        </div>
+        <p className={`text-sm leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+          Patrimoine & Wealth Tracker est une Progressive Web App (PWA). Une fois installée, elle s'ouvre sans barre d'adresse de navigateur comme une application native, dispose de son icône officielle sur votre écran d'accueil et conserve vos données accessibles même sans connexion.
+        </p>
+        <div className="pt-2 max-w-xs">
+          <PWAInstallButton variant="full" />
         </div>
       </div>
 
